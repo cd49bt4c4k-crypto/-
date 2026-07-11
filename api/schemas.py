@@ -1,6 +1,16 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+
+def format_beijing_time(v: datetime) -> str:
+    if v is None:
+        return ""
+    if v.tzinfo is None:
+        v = v.replace(tzinfo=timezone(timedelta(hours=8)))
+    else:
+        v = v.astimezone(timezone(timedelta(hours=8)))
+    return v.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class UserCreate(BaseModel):
@@ -31,10 +41,11 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        json_encoders = {datetime: format_beijing_time}
 
 
 class MessageCreate(BaseModel):
-    content: str = Field(max_length=80)
+    content: str = Field(max_length=500)
     area: str
     message_type: str = "note"
 
@@ -51,6 +62,7 @@ class MessageResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        json_encoders = {datetime: format_beijing_time}
 
 
 class GiftCreate(BaseModel):
@@ -71,6 +83,7 @@ class GiftResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        json_encoders = {datetime: format_beijing_time}
 
 
 class ComplaintCreate(BaseModel):
@@ -88,10 +101,11 @@ class ComplaintResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        json_encoders = {datetime: format_beijing_time}
 
 
 class ChatCreate(BaseModel):
-    content: str = Field(max_length=200)
+    content: str = Field(max_length=500)
 
 
 class BossEventResponse(BaseModel):
@@ -103,6 +117,7 @@ class BossEventResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        json_encoders = {datetime: format_beijing_time}
 
 
 class RankingResponse(BaseModel):

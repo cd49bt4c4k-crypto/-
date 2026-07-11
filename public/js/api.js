@@ -27,7 +27,8 @@ async function apiRequest(endpoint, options = {}) {
             data = await response.json();
         } else {
             const text = await response.text();
-            throw new Error('服务器返回了非JSON响应');
+            console.error('Non-JSON response:', text.substring(0, 500));
+            throw new Error('服务器返回了非JSON响应，请稍后重试');
         }
 
         if (!response.ok) {
@@ -88,7 +89,7 @@ const API = {
         body: JSON.stringify(data),
     }),
     
-    getChatMessages: (limit = 100) => apiRequest(`/chat?limit=${limit}`),
+    getChatMessages: (limit = 200) => apiRequest(`/chat?limit=${limit}`),
     
     enterBossOffice: () => apiRequest('/boss-office/enter', {
         method: 'POST',

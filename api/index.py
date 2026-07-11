@@ -1,7 +1,7 @@
 import json
 import os
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import FastAPI, Depends, HTTPException, Header, Query, Request
@@ -58,7 +58,7 @@ def get_current_user(session_id: str = Header(None), db: Session = Depends(get_d
     if not user:
         raise HTTPException(status_code=401, detail="用户不存在")
     
-    user.last_active = datetime.now()
+    user.last_active = datetime.now(timezone(timedelta(hours=8)))
     db.commit()
     return user
 
@@ -87,7 +87,7 @@ def get_or_create_user(session_id: str = Header(None), db: Session = Depends(get
         db.commit()
         db.refresh(user)
     
-    user.last_active = datetime.now()
+    user.last_active = datetime.now(timezone(timedelta(hours=8)))
     db.commit()
     return user
 
@@ -455,7 +455,7 @@ def send_chat_message(
 
 @app.get("/api/chat", response_model=List[schemas.MessageResponse])
 def get_chat_messages(
-    limit: int = 100,
+    limit: int = 1000,
     db: Session = Depends(get_db),
 ):
     messages = db.query(
@@ -474,7 +474,7 @@ def get_chat_messages(
      .all()
 
     result = []
-    for msg in messages:
+    for msg in reversed(messages):
         result.append(schemas.MessageResponse(
             id=msg.id,
             user_id=msg.user_id,
@@ -516,7 +516,7 @@ def get_today_ranking(
     limit: int = 20,
     db: Session = Depends(get_db),
 ):
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
     users = db.query(models.User).filter(
         models.User.is_ai == False
     ).order_by(
@@ -537,7 +537,7 @@ def get_today_ranking(
 
 @app.get("/api/stats", response_model=schemas.StatsResponse)
 def get_stats(db: Session = Depends(get_db)):
-    five_minutes_ago = datetime.now() - timedelta(minutes=5)
+    five_minutes_ago = datetime.now(timezone(timedelta(hours=8))) - timedelta(minutes=5)
     online_users = db.query(models.User).filter(
         models.User.is_ai == False,
         models.User.last_active >= five_minutes_ago,
@@ -545,7 +545,7 @@ def get_stats(db: Session = Depends(get_db)):
 
     ai_users = db.query(models.User).filter(models.User.is_ai == True).count()
 
-    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now(timezone(timedelta(hours=8))).replace(hour=0, minute=0, second=0, microsecond=0)
     today_messages = db.query(models.Message).filter(
         models.Message.created_at >= today_start
     ).count()
@@ -559,7 +559,7 @@ def get_stats(db: Session = Depends(get_db)):
 
 @app.get("/api/rooftop/status")
 def get_rooftop_status():
-    now = datetime.now()
+    now = datetime.now(timezone(timedelta(hours=8)))
     hour = now.hour
     is_open = hour >= 21 or hour < 2
     return {
@@ -581,7 +581,7 @@ def ai_action(db: Session = Depends(get_db)):
             return {"performed": 0}
 
         actions_performed = 0
-        now = datetime.now()
+        now = datetime.now(timezone(timedelta(hours=8)))
         hour = now.hour
         weekday = now.weekday()
 
@@ -686,7 +686,7 @@ def ai_action(db: Session = Depends(get_db)):
 def health_check():
     return {
         "status": "ok",
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": datetime.now(timezone(timedelta(hours=8))).isoformat(),
     }
 
 
@@ -714,8 +714,8 @@ def init_ai_users(db: Session):
 
 def cleanup_old_messages(db: Session):
     total = db.query(models.Message).count()
-    if total > 450:
-        delete_count = total - 450
+    if total > 5000:
+        delete_count = total - 5000
         subquery = db.query(models.Message.id).order_by(
             models.Message.created_at.asc()
         ).limit(delete_count).subquery()
@@ -739,11 +739,11 @@ def startup_event():
 
 @app.middleware("http")
 async def ensure_ai_users_middleware(request: Request, call_next):
+    response = await call_next(request)
     try:
         db = next(get_db())
         init_ai_users(db)
         db.close()
     except Exception:
         pass
-    response = await call_next(request)
     return response

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.sql import func
+from datetime import datetime, timezone, timedelta
 from .database import Base
 
 
@@ -14,8 +15,8 @@ class User(Base):
     reputation = Column(Integer, default=50)
     is_ai = Column(Boolean, default=False)
     avatar_color = Column(String(7), default="#4F46E5")
-    last_active = Column(DateTime(timezone=True), server_default=func.now())
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_active = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
     session_id = Column(String(100), unique=True, index=True)
 
 
@@ -24,10 +25,10 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    content = Column(String(80))
+    content = Column(Text)
     area = Column(String(20))
     message_type = Column(String(20), default="note")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
 
 
 class Gift(Base):
@@ -38,7 +39,7 @@ class Gift(Base):
     to_user_id = Column(Integer, ForeignKey("users.id"))
     gift_type = Column(String(20))
     message = Column(String(50), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
 
 
 class Complaint(Base):
@@ -48,7 +49,7 @@ class Complaint(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     content = Column(Text)
     likes = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
 
 
 class Vote(Base):
@@ -59,7 +60,7 @@ class Vote(Base):
     options = Column(Text)
     creator_id = Column(Integer, ForeignKey("users.id"))
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
 
 
 class VoteRecord(Base):
@@ -69,7 +70,7 @@ class VoteRecord(Base):
     vote_id = Column(Integer, ForeignKey("votes.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
     option_index = Column(Integer)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
 
 
 class BossEvent(Base):
@@ -80,7 +81,7 @@ class BossEvent(Base):
     event_type = Column(String(50))
     event_content = Column(String(200))
     reputation_change = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
 
 
 class ReputationRanking(Base):
@@ -90,4 +91,4 @@ class ReputationRanking(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     reputation = Column(Integer, default=0)
     rank_date = Column(String(20))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
