@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import httpx
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
@@ -70,17 +71,16 @@ def get_or_create_user(session_id: str = Header(None), db: Session = Depends(get
     user = db.query(models.User).filter(models.User.session_id == session_id).first()
     
     if not user:
-        guest_nicknames = ['匿名同事', '神秘访客', '职场新人', '实习生小王', '新入职员工', '打工人小李', '摸鱼大师', '代码狂人']
-        random_nickname = guest_nicknames[random.randint(0, len(guest_nicknames) - 1)]
-        
+        random_num = random.randint(1000, 9999)
         user = models.User(
-            nickname=random_nickname,
-            position=utils.get_random_position(),
-            area=utils.get_random_area(),
-            status=utils.get_random_status(),
-            reputation=50,
+            nickname=f'未注册用户{random_num}',
+            position='未注册',
+            area='普通办公区',
+            status='未注册',
+            reputation=0,
             is_ai=False,
-            avatar_color=utils.get_random_avatar_color(),
+            is_registered=False,
+            avatar_color='#94A3B8',
             session_id=session_id,
         )
         db.add(user)
@@ -129,6 +129,8 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
     existing_session = db.query(models.User).filter(models.User.session_id == user_data.session_id).first()
     if existing_session:
+        if existing_session.is_ai:
+            raise HTTPException(status_code=400, detail="该账号已被占用")
         existing_session.nickname = user_data.nickname
         existing_session.gender = user_data.gender
         existing_session.age = user_data.age
@@ -136,6 +138,9 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
         existing_session.position = user_data.position
         existing_session.area = user_data.area
         existing_session.status = user_data.status
+        existing_session.is_registered = True
+        existing_session.reputation = 50
+        existing_session.avatar_color = utils.get_random_avatar_color()
         db.commit()
         db.refresh(existing_session)
         return existing_session
@@ -150,6 +155,7 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
         status=user_data.status,
         reputation=50,
         is_ai=False,
+        is_registered=True,
         avatar_color=utils.get_random_avatar_color(),
         session_id=user_data.session_id,
     )
@@ -458,16 +464,29 @@ def send_chat_message(
 ):
     if current_user.is_ai:
         raise HTTPException(status_code=400, detail="AI用户不能发送群聊消息")
+    if not current_user.is_registered:
+        raise HTTPException(status_code=400, detail="请先注册")
 
     filtered_text, has_sensitive = filter_sensitive_words(msg_data.content)
     if has_sensitive:
         raise HTTPException(status_code=400, detail="消息包含敏感词，请修改")
+
+    reply_to_nickname = None
+    reply_to_content = None
+    if msg_data.reply_to:
+        original_msg = db.query(models.Message).filter(models.Message.id == msg_data.reply_to).first()
+        if original_msg:
+            original_user = db.query(models.User).filter(models.User.id == original_msg.user_id).first()
+            if original_user:
+                reply_to_nickname = original_user.nickname
+            reply_to_content = original_msg.content[:50]
 
     message = models.Message(
         user_id=current_user.id,
         content=filtered_text,
         area="group_chat",
         message_type="chat",
+        reply_to=msg_data.reply_to,
     )
     db.add(message)
     db.commit()
@@ -481,6 +500,9 @@ def send_chat_message(
         content=message.content,
         area="group_chat",
         message_type="chat",
+        reply_to=message.reply_to,
+        reply_to_nickname=reply_to_nickname,
+        reply_to_content=reply_to_content,
         created_at=message.created_at,
     )
     return result
@@ -497,6 +519,7 @@ def get_chat_messages(
         models.Message.content,
         models.Message.area,
         models.Message.message_type,
+        models.Message.reply_to,
         models.Message.created_at,
         models.User.nickname,
         models.User.avatar_color,
@@ -508,6 +531,16 @@ def get_chat_messages(
 
     result = []
     for msg in reversed(messages):
+        reply_to_nickname = None
+        reply_to_content = None
+        if msg.reply_to:
+            original_msg = db.query(models.Message).filter(models.Message.id == msg.reply_to).first()
+            if original_msg:
+                original_user = db.query(models.User).filter(models.User.id == original_msg.user_id).first()
+                if original_user:
+                    reply_to_nickname = original_user.nickname
+                reply_to_content = original_msg.content[:50]
+        
         result.append(schemas.MessageResponse(
             id=msg.id,
             user_id=msg.user_id,
@@ -516,6 +549,9 @@ def get_chat_messages(
             content=msg.content,
             area=msg.area,
             message_type=msg.message_type,
+            reply_to=msg.reply_to,
+            reply_to_nickname=reply_to_nickname,
+            reply_to_content=reply_to_content,
             created_at=msg.created_at,
         ))
     return result
@@ -721,6 +757,71 @@ def health_check():
         "status": "ok",
         "timestamp": datetime.now(timezone(timedelta(hours=8))).isoformat(),
     }
+
+
+NETEASE_API_URL = "https://music.163.com/api"
+
+
+@app.get("/api/music/search")
+async def search_music(keyword: str = Query(..., min_length=1, max_length=100), limit: int = 20):
+    async with httpx.AsyncClient() as client:
+        try:
+            url = "https://autumnfish.cn/search"
+            params = {"keywords": keyword, "limit": limit}
+            response = await client.get(url, params=params, timeout=10)
+            data = response.json()
+            
+            if data.get("result"):
+                songs = data["result"].get("songs", [])
+                result = []
+                for song in songs:
+                    result.append({
+                        "id": song.get("id"),
+                        "name": song.get("name"),
+                        "artist": "/".join([a.get("name") for a in song.get("artists", [])]),
+                        "album": song.get("album", {}).get("name"),
+                        "cover": song.get("album", {}).get("picUrl", ""),
+                        "duration": song.get("duration", 0),
+                    })
+                return {"songs": result}
+            return {"songs": []}
+        except Exception as e:
+            print(f"Music search error: {e}")
+            return {"songs": []}
+
+
+@app.get("/api/music/url")
+async def get_music_url(id: int = Query(...)):
+    async with httpx.AsyncClient() as client:
+        try:
+            url = "https://autumnfish.cn/song/url"
+            params = {"id": id}
+            response = await client.get(url, params=params, timeout=10)
+            data = response.json()
+            
+            if data.get("data") and len(data["data"]) > 0:
+                return {"url": data["data"][0].get("url")}
+            return {"url": None}
+        except Exception as e:
+            print(f"Music url error: {e}")
+            return {"url": None}
+
+
+@app.get("/api/music/lyrics")
+async def get_music_lyrics(id: int = Query(...)):
+    async with httpx.AsyncClient() as client:
+        try:
+            url = "https://autumnfish.cn/lyric"
+            params = {"id": id}
+            response = await client.get(url, params=params, timeout=10)
+            data = response.json()
+            
+            if data.get("lrc"):
+                return {"lyrics": data["lrc"].get("lyric", "")}
+            return {"lyrics": ""}
+        except Exception as e:
+            print(f"Music lyrics error: {e}")
+            return {"lyrics": ""}
 
 
 def init_ai_users(db: Session):

@@ -106,4 +106,10 @@ const API = {
     }),
     
     health: () => apiRequest('/health'),
+    
+    searchMusic: (keyword, limit = 20) => apiRequest(`/music/search?keyword=${encodeURIComponent(keyword)}&limit=${limit}`),
+    
+    getMusicUrl: (id) => apiRequest(`/music/url?id=${id}`),
+    
+    getMusicLyrics: (id) => apiRequest(`/music/lyrics?id=${id}`),
 };

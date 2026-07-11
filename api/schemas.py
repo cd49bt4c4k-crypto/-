@@ -45,6 +45,7 @@ class UserResponse(BaseModel):
     status: str
     reputation: int
     is_ai: bool
+    is_registered: bool
     avatar_color: str
     last_active: datetime
 
@@ -67,6 +68,9 @@ class MessageResponse(BaseModel):
     content: str
     area: str
     message_type: str
+    reply_to: Optional[int] = None
+    reply_to_nickname: Optional[str] = None
+    reply_to_content: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -115,6 +119,7 @@ class ComplaintResponse(BaseModel):
 
 class ChatCreate(BaseModel):
     content: str = Field(max_length=500)
+    reply_to: Optional[int] = None
 
 
 class BossEventResponse(BaseModel):

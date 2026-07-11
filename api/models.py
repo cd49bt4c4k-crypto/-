@@ -17,6 +17,7 @@ class User(Base):
     status = Column(String(30))
     reputation = Column(Integer, default=50)
     is_ai = Column(Boolean, default=False)
+    is_registered = Column(Boolean, default=False)
     avatar_color = Column(String(7), default="#4F46E5")
     last_active = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
@@ -31,6 +32,7 @@ class Message(Base):
     content = Column(Text)
     area = Column(String(20))
     message_type = Column(String(20), default="note")
+    reply_to = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), default=lambda: datetime.now(timezone(timedelta(hours=8))))
 
 

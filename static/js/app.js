@@ -1,4 +1,6 @@
 let currentUser = null;
+let replyingTo = null;
+let currentPlayingSong = null;
 
 const DEFAULT_CONFIG = {
     positions: ["前端", "后端", "产品", "运营", "财务", "人事", "设计师", "测试", "自由职业"],
@@ -84,6 +86,12 @@ function formatTime(dateStr) {
     const parts = fmt.formatToParts(d);
     const get = (type) => parts.find(p => p.type === type)?.value || '00';
     return `${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`;
+}
+
+function formatDuration(ms) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 async function checkLogin() {
@@ -182,8 +190,19 @@ function renderChatMessages(messages) {
     container.innerHTML = messages.map(msg => {
         const isMe = currentUser && currentUser.id === msg.user_id;
         const content = formatMessageContent(msg.content);
+        
+        let replyHtml = '';
+        if (msg.reply_to_nickname) {
+            replyHtml = `
+                <div class="mb-1 p-2 bg-slate-100 dark:bg-slate-700/50 rounded-lg text-xs">
+                    <span class="text-slate-500">回复 ${msg.reply_to_nickname}:</span>
+                    <span class="text-slate-700 dark:text-slate-200 ml-1">${escapeHtml(msg.reply_to_content || '')}</span>
+                </div>
+            `;
+        }
+
         return `
-            <div class="flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''} animate-slide-up">
+            <div class="flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''} animate-slide-up message-item group" data-msg-id="${msg.id}">
                 <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 shadow-sm" style="background: ${msg.avatar_color}">
                     ${msg.nickname.charAt(0)}
                 </div>
@@ -191,8 +210,10 @@ function renderChatMessages(messages) {
                     <div class="text-xs text-slate-500 dark:text-slate-400 mb-0.5 ${isMe ? 'text-right' : 'text-left'}">
                         ${msg.nickname} · ${formatTime(msg.created_at)}
                     </div>
-                    <div class="${isMe ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700'} px-3.5 py-2 rounded-2xl text-sm break-words shadow-sm">
+                    <div class="${isMe ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700'} px-3.5 py-2 rounded-2xl text-sm break-words shadow-sm relative">
+                        ${replyHtml}
                         ${content}
+                        <button onclick="replyToMessage(${msg.id}, '${msg.nickname}')" class="absolute -top-1 -right-1 w-5 h-5 bg-slate-300 dark:bg-slate-600 rounded-full flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">↩</button>
                     </div>
                 </div>
             </div>
@@ -213,6 +234,18 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function replyToMessage(msgId, nickname) {
+    replyingTo = { id: msgId, nickname };
+    document.getElementById('reply-indicator-text').textContent = `回复 ${nickname}`;
+    document.getElementById('reply-indicator').classList.remove('hidden');
+    document.getElementById('chat-input').focus();
+}
+
+function clearReply() {
+    replyingTo = null;
+    document.getElementById('reply-indicator').classList.add('hidden');
+}
+
 function handleChatKeypress(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -227,8 +260,13 @@ async function sendChatMessage() {
     if (!content) return;
 
     try {
-        await API.sendChatMessage({ content });
+        const data = {
+            content,
+            reply_to: replyingTo?.id || null,
+        };
+        await API.sendChatMessage(data);
         input.value = '';
+        clearReply();
         await loadChatMessages();
     } catch (e) {
         showToast(e.message, 'error');
@@ -276,7 +314,7 @@ function renderUserList(users) {
                     ${user.nickname.charAt(0)}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">${user.nickname}</div>
+                    <div class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">${user.nickname}${user.is_ai ? '🤖' : ''}</div>
                     <div class="text-xs text-slate-500 dark:text-slate-400 truncate">${user.position}</div>
                 </div>
                 ${!user.is_ai ? '<span class="w-2 h-2 rounded-full bg-green-500"></span>' : ''}
@@ -341,6 +379,95 @@ async function saveProfile() {
     } catch (e) {
         showToast(e.message, 'error');
     }
+}
+
+function toggleMusicPanel() {
+    const panel = document.getElementById('music-panel');
+    panel.classList.toggle('hidden');
+}
+
+async function searchMusic() {
+    const keyword = document.getElementById('music-search-input').value.trim();
+    if (!keyword) return;
+
+    try {
+        const result = await API.searchMusic(keyword);
+        const list = document.getElementById('music-search-results');
+        
+        if (result.songs && result.songs.length > 0) {
+            list.innerHTML = result.songs.map(song => `
+                <div class="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-green-400 transition-colors">
+                    <img src="${song.cover || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded-lg object-cover">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">${song.name}</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">${song.artist} - ${song.album}</div>
+                        <div class="text-xs text-slate-400 mt-1">${formatDuration(song.duration)}</div>
+                    </div>
+                    <button onclick="playMusic(${song.id}, '${song.name}', '${song.artist}', '${song.cover}')" class="px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors">
+                        ▶ 播放
+                    </button>
+                    <button onclick="shareMusic(${song.id}, '${song.name}', '${song.artist}')" class="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors">
+                        📤 分享
+                    </button>
+                </div>
+            `).join('');
+        } else {
+            list.innerHTML = '<div class="text-center text-sm text-slate-400 py-8">没有找到相关歌曲</div>';
+        }
+    } catch (e) {
+        showToast('搜索失败', 'error');
+    }
+}
+
+async function playMusic(id, name, artist, cover) {
+    try {
+        const result = await API.getMusicUrl(id);
+        if (result.url) {
+            currentPlayingSong = { id, name, artist, cover, url: result.url };
+            
+            const player = document.getElementById('music-player');
+            const audio = document.getElementById('music-audio');
+            audio.src = result.url;
+            audio.play();
+            
+            document.getElementById('player-song-name').textContent = name;
+            document.getElementById('player-song-artist').textContent = artist;
+            document.getElementById('player-cover').src = cover || 'https://via.placeholder.com/60';
+            
+            player.classList.remove('hidden');
+        } else {
+            showToast('无法获取播放链接', 'error');
+        }
+    } catch (e) {
+        showToast('播放失败', 'error');
+    }
+}
+
+function togglePlay() {
+    const audio = document.getElementById('music-audio');
+    const btn = document.getElementById('player-play-btn');
+    if (audio.paused) {
+        audio.play();
+        btn.textContent = '⏸';
+    } else {
+        audio.pause();
+        btn.textContent = '▶';
+    }
+}
+
+function stopMusic() {
+    const audio = document.getElementById('music-audio');
+    audio.pause();
+    audio.src = '';
+    document.getElementById('music-player').classList.add('hidden');
+    currentPlayingSong = null;
+}
+
+function shareMusic(id, name, artist) {
+    const content = `🎵 分享歌曲：${name} - ${artist}\nhttps://music.163.com/#/song?id=${id}`;
+    document.getElementById('chat-input').value = content;
+    document.getElementById('music-panel').classList.add('hidden');
+    document.getElementById('chat-input').focus();
 }
 
 async function init() {
