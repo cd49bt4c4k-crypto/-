@@ -1,9 +1,15 @@
 import json
 import os
 import random
-import httpx
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
+
+try:
+    import httpx
+    HAS_HTTPX = True
+except ImportError:
+    HAS_HTTPX = False
+    print("Warning: httpx not installed, music features will be disabled")
 
 from fastapi import FastAPI, Depends, HTTPException, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -764,6 +770,8 @@ NETEASE_API_URL = "https://music.163.com/api"
 
 @app.get("/api/music/search")
 async def search_music(keyword: str = Query(..., min_length=1, max_length=100), limit: int = 20):
+    if not HAS_HTTPX:
+        return {"songs": []}
     async with httpx.AsyncClient() as client:
         try:
             url = "https://autumnfish.cn/search"
@@ -792,6 +800,8 @@ async def search_music(keyword: str = Query(..., min_length=1, max_length=100), 
 
 @app.get("/api/music/url")
 async def get_music_url(id: int = Query(...)):
+    if not HAS_HTTPX:
+        return {"url": None}
     async with httpx.AsyncClient() as client:
         try:
             url = "https://autumnfish.cn/song/url"
@@ -809,6 +819,8 @@ async def get_music_url(id: int = Query(...)):
 
 @app.get("/api/music/lyrics")
 async def get_music_lyrics(id: int = Query(...)):
+    if not HAS_HTTPX:
+        return {"lyrics": ""}
     async with httpx.AsyncClient() as client:
         try:
             url = "https://autumnfish.cn/lyric"
