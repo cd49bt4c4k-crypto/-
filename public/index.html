@@ -75,7 +75,17 @@
         }
 
         .disguise-panel {
-            display: none;
+            display: none !important;
+        }
+
+        .countdown-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
     </style>
 </head>
@@ -186,6 +196,9 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
+                    <div id="countdown" class="countdown-badge px-3 py-1.5 text-xs font-bold text-white rounded-lg shadow-md hidden">
+                        ⏰ 下班倒计时: <span id="countdown-time">--:--:--</span>
+                    </div>
                     <button onclick="toggleDisguise()" id="disguise-btn" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/30 transition-colors">
                         🛡️ 伪装工作
                     </button>

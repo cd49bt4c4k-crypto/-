@@ -32,6 +32,32 @@ function toggleDarkMode() {
     localStorage.setItem('dark_mode', isDark ? '1' : '0');
 }
 
+function updateCountdown() {
+    const now = new Date();
+    const target = new Date();
+    target.setHours(18, 0, 0, 0);
+    
+    let diff = target.getTime() - now.getTime();
+    
+    if (diff < 0) {
+        target.setDate(target.getDate() + 1);
+        diff = target.getTime() - now.getTime();
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    document.getElementById('countdown-time').textContent = timeStr;
+}
+
+function startCountdown() {
+    document.getElementById('countdown').classList.remove('hidden');
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+}
+
 function initDarkMode() {
     if (localStorage.getItem('dark_mode') === '1') {
         document.documentElement.classList.add('dark');
@@ -102,6 +128,7 @@ async function handleRegister() {
         document.getElementById('my-nickname').textContent = user.nickname;
         showToast('注册成功！欢迎加入~', 'success');
 
+        startCountdown();
         await loadChatMessages();
         await refreshStats();
         await loadUsers();
@@ -317,6 +344,7 @@ async function init() {
     }
 
     document.getElementById('login-modal').classList.add('hidden');
+    startCountdown();
     await loadChatMessages();
     await refreshStats();
     await loadUsers();
