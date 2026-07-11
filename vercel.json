@@ -5,25 +5,29 @@
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "15mb"
+        "runtime": "python3.11"
       }
     },
     {
-      "src": "public/**",
+      "src": "static/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "dest": "api/index.py"
     },
     {
       "src": "/(.*)",
-      "dest": "/public/$1"
+      "dest": "static/$1"
+    },
+    {
+      "src": "/",
+      "dest": "static/index.html"
     }
   ],
   "env": {
-    "ASGI_APP": "api.index:app"
+    "NETEASE_API_URL": "https://autumnfish.cn"
   }
 }

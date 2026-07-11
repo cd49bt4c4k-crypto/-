@@ -1,0 +1,23 @@
+name = "virtual-office-chat"
+type = "pages"
+
+[build]
+command = "cp -r public/* static/ 2>/dev/null || true"
+publish = "static"
+build.env = { NETEASE_API_URL = "https://autumnfish.cn" }
+
+[env.production]
+name = "virtual-office-chat"
+
+[[redirects]]
+source = "/api/*"
+destination = "/api/index.py"
+status = 200
+
+[[headers]]
+source = "/*"
+headers = [
+  { key = "Access-Control-Allow-Origin", value = "*" },
+  { key = "Access-Control-Allow-Methods", value = "GET, POST, PUT, DELETE, OPTIONS" },
+  { key = "Access-Control-Allow-Headers", value = "Content-Type, session_id" }
+]
