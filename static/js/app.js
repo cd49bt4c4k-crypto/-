@@ -183,13 +183,21 @@ function toggleWhiteNoise() {
     }
 }
 
+const DEFAULT_CONFIG = {
+    positions: ["前端", "后端", "产品", "运营", "财务", "人事", "设计师", "测试", "自由职业"],
+    areas: ["靠窗黄金区", "普通办公区", "角落摸鱼区", "地下加班区"],
+    statuses: ["认真敲代码", "带薪发呆", "偷偷刷短视频", "假装开会", "摸鱼刷论坛", "疯狂内卷加班"],
+    gift_types: ["咖啡", "奶茶", "可乐", "零食", "鲜花"],
+};
+
 async function loadConfig() {
     try {
         config = await API.getConfig();
-        populateOnboardingOptions();
     } catch (e) {
-        console.error('Failed to load config:', e);
+        console.error('Failed to load config from API, using default config:', e);
+        config = DEFAULT_CONFIG;
     }
+    populateOnboardingOptions();
 }
 
 function populateOnboardingOptions() {

@@ -183,13 +183,21 @@ function toggleWhiteNoise() {
     }
 }
 
+const DEFAULT_CONFIG = {
+    positions: ["前端", "后端", "产品", "运营", "财务", "人事", "设计师", "测试", "自由职业"],
+    areas: ["靠窗黄金区", "普通办公区", "角落摸鱼区", "地下加班区"],
+    statuses: ["认真敲代码", "带薪发呆", "偷偷刷短视频", "假装开会", "摸鱼刷论坛", "疯狂内卷加班"],
+    gift_types: ["咖啡", "奶茶", "可乐", "零食", "鲜花"],
+};
+
 async function loadConfig() {
     try {
         config = await API.getConfig();
-        populateOnboardingOptions();
     } catch (e) {
-        console.error('Failed to load config:', e);
+        console.error('Failed to load config from API, using default config:', e);
+        config = DEFAULT_CONFIG;
     }
+    populateOnboardingOptions();
 }
 
 function populateOnboardingOptions() {
@@ -876,4 +884,219 @@ function generateExcelDisguise() {
     
     let tableRows = '';
     for (let i = 0; i < rows; i++) {
-        let cells = `<td
+        let cells = `<td class="border border-gray-300 bg-gray-100 text-center text-xs text-gray-600 w-10">${i + 1}</td>`;
+        for (let j = 0; j < cols; j++) {
+            const val = i === 0 
+                ? ['部门', '姓名', '工号', '职位', '入职日期', '基本工资', '绩效', '补贴', '扣款', '实发工资', '备注', '签字'][j] || ''
+                : '';
+            cells += `<td class="border border-gray-300 px-2 py-1 text-xs">${val}</td>`;
+        }
+        tableRows += `<tr>${cells}</tr>`;
+    }
+    
+    return `
+        <div class="w-full h-full bg-white">
+            <div class="bg-blue-600 text-white px-4 py-2 flex items-center gap-4 text-sm">
+                <span>📊 员工薪资表 - Excel</span>
+                <span class="ml-auto">文件 开始 插入 页面布局 公式 数据 审阅 视图</span>
+            </div>
+            <div class="bg-gray-100 border-b border-gray-300 px-4 py-1 text-xs text-gray-600 flex items-center gap-2">
+                <span>fx</span>
+                <span class="bg-white px-2 py-0.5 border border-gray-300 rounded">A1</span>
+                <span class="bg-white px-2 py-0.5 border border-gray-300 rounded flex-1">部门</span>
+            </div>
+            <table class="w-full border-collapse text-sm">
+                <thead>
+                    <tr>
+                        <th class="border border-gray-300 bg-gray-100 w-10"></th>
+                        ${Array.from(colLabels).map(c => `<th class="border border-gray-300 bg-gray-100 text-xs font-normal text-gray-600 px-2 py-1">${c}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+            <div class="fixed bottom-0 left-0 right-0 bg-gray-200 border-t border-gray-300 px-4 py-1 text-xs text-gray-600 flex items-center gap-4">
+                <span>Sheet1</span>
+                <span class="ml-auto">就绪  100%</span>
+            </div>
+        </div>
+    `;
+}
+
+function generateCodeDisguise() {
+    const codeLines = [
+        'function calculateSalary(employees) {',
+        '  let totalPayroll = 0;',
+        '  const results = [];',
+        '',
+        '  for (let i = 0; i < employees.length; i++) {',
+        '    const emp = employees[i];',
+        '    const baseSalary = emp.baseSalary;',
+        '    const performance = emp.performance * 0.3;',
+        '    const allowance = emp.allowance;',
+        '    const deduction = emp.deduction;',
+        '',
+        '    const netSalary = baseSalary + performance + allowance - deduction;',
+        '    totalPayroll += netSalary;',
+        '',
+        '    results.push({',
+        '      id: emp.id,',
+        '      name: emp.name,',
+        '      netSalary: netSalary,',
+        '      date: new Date().toISOString()',
+        '    });',
+        '  }',
+        '',
+        '  console.log("Total payroll:", totalPayroll);',
+        '  return { results, totalPayroll };',
+        '}',
+        '',
+        '// 月度薪资核算',
+        'async function processMonthlyPayroll(month) {',
+        '  const employees = await fetchEmployees();',
+        '  const payroll = calculateSalary(employees);',
+        '  await savePayroll(payroll);',
+        '  return payroll;',
+        '}',
+    ];
+    
+    return `
+        <div class="w-full h-full bg-[#1e1e1e] text-gray-300 font-mono text-sm overflow-auto">
+            <div class="bg-[#323233] px-4 py-2 flex items-center gap-2 text-xs">
+                <span class="text-gray-400">📁 payroll.js</span>
+                <span class="ml-auto text-gray-500">Visual Studio Code</span>
+            </div>
+            <div class="flex">
+                <div class="bg-[#252526] w-12 py-4 text-right pr-3 text-gray-600 text-xs select-none">
+                    ${codeLines.map((_, i) => `<div>${i + 1}</div>`).join('')}
+                </div>
+                <div class="flex-1 py-4 pl-4">
+                    ${codeLines.map(line => {
+                        let colored = line
+                            .replace(/function/g, '<span class="text-purple-400">function</span>')
+                            .replace(/const/g, '<span class="text-blue-400">const</span>')
+                            .replace(/let/g, '<span class="text-blue-400">let</span>')
+                            .replace(/async/g, '<span class="text-purple-400">async</span>')
+                            .replace(/await/g, '<span class="text-purple-400">await</span>')
+                            .replace(/for/g, '<span class="text-purple-400">for</span>')
+                            .replace(/if/g, '<span class="text-purple-400">if</span>')
+                            .replace(/return/g, '<span class="text-purple-400">return</span>')
+                            .replace(/console\.log/g, '<span class="text-yellow-300">console.log</span>')
+                            .replace(/"([^"]*)"/g, '<span class="text-orange-300">"$1"</span>')
+                            .replace(/\/\/.*/g, '<span class="text-gray-600">$&</span>')
+                            .replace(/\d+/g, '<span class="text-green-400">$&</span>');
+                        return `<div>${colored || '&nbsp;'}</div>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function formatTime(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+    return date.toLocaleDateString('zh-CN');
+}
+
+function switchView(view) {
+    currentView = view;
+    
+    document.querySelectorAll('.view-tab').forEach(tab => {
+        if (tab.dataset.view === view) {
+            tab.classList.remove('bg-white/50', 'dark:bg-slate-700/50', 'text-slate-600', 'dark:text-slate-400');
+            tab.classList.add('bg-white', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-200', 'shadow-sm');
+        } else {
+            tab.classList.add('bg-white/50', 'dark:bg-slate-700/50', 'text-slate-600', 'dark:text-slate-400');
+            tab.classList.remove('bg-white', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-200', 'shadow-sm');
+        }
+    });
+    
+    document.querySelectorAll('.view-scene').forEach(scene => {
+        scene.classList.add('hidden');
+    });
+    document.getElementById(view + '-scene').classList.remove('hidden');
+    
+    if (view === 'pantry') {
+        openComplaintPanel();
+    } else {
+        closeComplaintPanel();
+    }
+    
+    if (view === 'meeting') {
+        openVotePanel();
+    } else {
+        closeVotePanel();
+    }
+    
+    if (view === 'rooftop') {
+        checkRooftopStatus();
+    }
+    
+    refreshSceneForView(view);
+}
+
+async function checkRooftopStatus() {
+    try {
+        const status = await API.getRooftopStatus();
+        const statusEl = document.getElementById('rooftop-status');
+        if (!status.is_open) {
+            showToast(status.message, 'warning');
+        }
+    } catch (e) {
+        console.error('Failed to check rooftop status:', e);
+    }
+}
+
+function refreshAllData() {
+    refreshUsers();
+    refreshMessages();
+    refreshRanking();
+    refreshStats();
+}
+
+async function init() {
+    initDarkMode();
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    document.getElementById('message-input').addEventListener('input', updateCharCount);
+    
+    document.addEventListener('click', (e) => {
+        const picker = document.getElementById('emoji-picker');
+        if (!picker.contains(e.target) && !e.target.closest('button[onclick="showEmojiPicker()"]')) {
+            picker.classList.add('hidden');
+        }
+    });
+    
+    await loadConfig();
+    
+    const loggedIn = await checkLogin();
+    if (loggedIn) {
+        refreshAllData();
+    }
+    
+    setInterval(() => {
+        if (currentUser) {
+            refreshUsers();
+            refreshMessages();
+            refreshStats();
+        }
+    }, 10000);
+    
+    setInterval(() => {
+        if (currentUser) {
+            refreshRanking();
+        }
+    }, 60000);
+
+    setInterval(() => {
+        API.triggerAIAction().catch(() => {});
+    }, 15000);
+}
+
+init();
