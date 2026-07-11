@@ -124,6 +124,7 @@ async function handleRegister() {
         });
 
         currentUser = user;
+        setDisguiseActive(false);
         document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('my-nickname').textContent = user.nickname;
         showToast('注册成功！欢迎加入~', 'success');
@@ -137,20 +138,28 @@ async function handleRegister() {
     }
 }
 
-function toggleDisguise() {
+function setDisguiseActive(active) {
     const body = document.body;
     const btn = document.getElementById('disguise-btn');
-    const isDisguised = body.classList.contains('disguise-mode');
+    const panel = document.getElementById('disguise-panel');
 
-    if (isDisguised) {
-        body.classList.remove('disguise-mode');
-        btn.textContent = '🛡️ 伪装工作';
-        showToast('已退出伪装模式', 'info');
-    } else {
-        body.classList.add('disguise-mode');
+    if (active) {
+        body.classList.add('disguise-active');
+        body.style.background = '#1e1e1e';
+        panel.style.display = 'block';
         btn.textContent = '💬 返回聊天';
-        showToast('已切换到伪装模式', 'info');
+    } else {
+        body.classList.remove('disguise-active');
+        body.style.background = '';
+        panel.style.display = 'none';
+        btn.textContent = '🛡️ 伪装工作';
     }
+}
+
+function toggleDisguise() {
+    const isDisguised = document.body.classList.contains('disguise-active');
+    setDisguiseActive(!isDisguised);
+    showToast(isDisguised ? '已退出伪装模式' : '已切换到伪装模式', 'info');
 }
 
 async function loadChatMessages() {
@@ -336,6 +345,7 @@ async function saveProfile() {
 
 async function init() {
     initDarkMode();
+    setDisguiseActive(false);
 
     const loggedIn = await checkLogin();
     if (!loggedIn) {
