@@ -317,6 +317,33 @@ async function checkLogin() {
     }
 }
 
+async function autoCreateUser() {
+    try {
+        const guestNicknames = ['匿名同事', '神秘访客', '职场新人', '实习生小王', '新入职员工'];
+        const randomNickname = guestNicknames[Math.floor(Math.random() * guestNicknames.length)];
+        const randomPosition = config.positions[Math.floor(Math.random() * config.positions.length)];
+        const randomArea = config.areas[Math.floor(Math.random() * config.areas.length)];
+        const randomStatus = config.statuses[Math.floor(Math.random() * config.statuses.length)];
+
+        const user = await API.register({
+            nickname: randomNickname,
+            position: randomPosition,
+            area: randomArea,
+            status: randomStatus,
+            session_id: currentSessionId,
+        });
+
+        currentUser = user;
+        document.getElementById('onboarding-modal').classList.add('hidden');
+        updateUserUI();
+        showToast('欢迎加入虚拟职场！', 'success');
+        return true;
+    } catch (e) {
+        console.error('Failed to auto-create user:', e);
+        return false;
+    }
+}
+
 function updateUserUI() {
     if (!currentUser) return;
 
@@ -854,69 +881,117 @@ function activateDisguise(type) {
         overlay.innerHTML = generateCodeDisguise();
     }
     
-    showToast('伪装模式开启，移动鼠标恢复', 'info');
+    showToast('伪装模式已开启，按 ESC 或点击右下角退出按钮返回', 'info');
     
-    let lastX = 0, lastY = 0;
-    let moveCount = 0;
-    
-    function handleMove(e) {
-        const dx = Math.abs(e.clientX - lastX);
-        const dy = Math.abs(e.clientY - lastY);
-        if (dx > 5 || dy > 5) {
-            moveCount++;
-            if (moveCount > 3) {
-                overlay.classList.remove('active');
-                document.removeEventListener('mousemove', handleMove);
-                showToast('已恢复正常页面', 'info');
-            }
+    function handleKeydown(e) {
+        if (e.key === 'Escape') {
+            deactivateDisguise();
+            document.removeEventListener('keydown', handleKeydown);
         }
-        lastX = e.clientX;
-        lastY = e.clientY;
     }
-    
-    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('keydown', handleKeydown);
+}
+
+function deactivateDisguise() {
+    const overlay = document.getElementById('disguise-overlay');
+    overlay.classList.remove('active');
+    showToast('已恢复正常页面', 'info');
 }
 
 function generateExcelDisguise() {
-    const rows = 30;
+    const rows = 40;
     const cols = 12;
     const colLabels = 'ABCDEFGHIJKL';
     
+    const departments = ['研发部', '产品部', '运营部', '财务部', '人事部', '市场部'];
+    const positions = ['高级工程师', '工程师', '产品经理', '运营专员', '财务主管', '人事专员'];
+    const names = ['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十', '郑一', '陈二'];
+    
     let tableRows = '';
     for (let i = 0; i < rows; i++) {
-        let cells = `<td class="border border-gray-300 bg-gray-100 text-center text-xs text-gray-600 w-10">${i + 1}</td>`;
+        let cells = `<td class="border border-gray-300 bg-gray-100 text-center text-xs text-gray-600 w-10 select-none">${i + 1}</td>`;
         for (let j = 0; j < cols; j++) {
-            const val = i === 0 
-                ? ['部门', '姓名', '工号', '职位', '入职日期', '基本工资', '绩效', '补贴', '扣款', '实发工资', '备注', '签字'][j] || ''
-                : '';
-            cells += `<td class="border border-gray-300 px-2 py-1 text-xs">${val}</td>`;
+            let val = '';
+            if (i === 0) {
+                val = ['部门', '姓名', '工号', '职位', '入职日期', '基本工资', '绩效奖金', '餐补', '交通补贴', '扣款', '实发工资', '备注'][j] || '';
+            } else if (i <= 15) {
+                if (j === 0) val = departments[Math.floor(Math.random() * departments.length)];
+                else if (j === 1) val = names[Math.floor(Math.random() * names.length)];
+                else if (j === 2) val = 'EMP' + String(i).padStart(4, '0');
+                else if (j === 3) val = positions[Math.floor(Math.random() * positions.length)];
+                else if (j === 4) val = `${2020 + Math.floor(Math.random() * 4)}-${String(1 + Math.floor(Math.random() * 12)).padStart(2, '0')}-${String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')}`;
+                else if (j === 5) val = String(8000 + Math.floor(Math.random() * 12000));
+                else if (j === 6) val = String(Math.floor(Math.random() * 5000));
+                else if (j === 7) val = String(Math.floor(Math.random() * 500));
+                else if (j === 8) val = String(Math.floor(Math.random() * 300));
+                else if (j === 9) val = String(Math.floor(Math.random() * 200));
+                else if (j === 10) val = String(10000 + Math.floor(Math.random() * 15000));
+                else val = '';
+            }
+            cells += `<td class="border border-gray-300 px-2 py-1 text-xs select-none">${val}</td>`;
         }
         tableRows += `<tr>${cells}</tr>`;
     }
     
     return `
-        <div class="w-full h-full bg-white">
-            <div class="bg-blue-600 text-white px-4 py-2 flex items-center gap-4 text-sm">
-                <span>📊 员工薪资表 - Excel</span>
-                <span class="ml-auto">文件 开始 插入 页面布局 公式 数据 审阅 视图</span>
+        <div class="w-full h-full bg-white overflow-hidden font-sans select-none">
+            <div class="bg-blue-600 text-white px-4 py-2 flex items-center gap-4 text-sm shadow-sm">
+                <span class="font-bold">📊 员工薪资核算表.xlsx</span>
+                <div class="flex-1"></div>
+                <span>文件</span>
+                <span>开始</span>
+                <span>插入</span>
+                <span>页面布局</span>
+                <span>公式</span>
+                <span>数据</span>
+                <span>审阅</span>
+                <span>视图</span>
+                <div class="flex items-center gap-2 ml-4">
+                    <span class="w-6 h-6 bg-red-500 rounded flex items-center justify-center text-xs cursor-pointer hover:bg-red-600" onclick="deactivateDisguise()">✕</span>
+                </div>
             </div>
             <div class="bg-gray-100 border-b border-gray-300 px-4 py-1 text-xs text-gray-600 flex items-center gap-2">
                 <span>fx</span>
-                <span class="bg-white px-2 py-0.5 border border-gray-300 rounded">A1</span>
-                <span class="bg-white px-2 py-0.5 border border-gray-300 rounded flex-1">部门</span>
+                <span class="bg-white px-2 py-0.5 border border-gray-300 rounded text-gray-700 font-medium">G1</span>
+                <span class="bg-white px-2 py-0.5 border border-gray-300 rounded flex-1 text-gray-800">=SUM(E1:F1)</span>
             </div>
-            <table class="w-full border-collapse text-sm">
-                <thead>
-                    <tr>
-                        <th class="border border-gray-300 bg-gray-100 w-10"></th>
-                        ${Array.from(colLabels).map(c => `<th class="border border-gray-300 bg-gray-100 text-xs font-normal text-gray-600 px-2 py-1">${c}</th>`).join('')}
-                    </tr>
-                </thead>
-                <tbody>${tableRows}</tbody>
-            </table>
-            <div class="fixed bottom-0 left-0 right-0 bg-gray-200 border-t border-gray-300 px-4 py-1 text-xs text-gray-600 flex items-center gap-4">
-                <span>Sheet1</span>
-                <span class="ml-auto">就绪  100%</span>
+            <div class="flex border-b border-gray-300 bg-gray-50">
+                <div class="flex gap-1 p-1">
+                    <button class="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded">☝️</button>
+                    <button class="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded">⬆️</button>
+                    <button class="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded">⬇️</button>
+                    <button class="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded">✌️</button>
+                    <button class="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded">➡️</button>
+                </div>
+                <div class="flex-1 flex items-center justify-center">
+                    <span class="text-xs text-gray-500">Sheet1</span>
+                </div>
+                <div class="flex items-center gap-4 px-4 text-xs text-gray-500">
+                    <span>就绪</span>
+                    <span>100%</span>
+                    <span>普通</span>
+                </div>
+            </div>
+            <div class="overflow-auto h-[calc(100%-130px)]">
+                <table class="w-full border-collapse text-sm">
+                    <thead>
+                        <tr>
+                            <th class="border border-gray-300 bg-gray-100 w-10 select-none"></th>
+                            ${Array.from(colLabels).map(c => `<th class="border border-gray-300 bg-gray-100 text-xs font-normal text-gray-600 px-2 py-1 select-none">${c}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            </div>
+            <div class="fixed bottom-0 left-0 right-0 bg-gray-200 border-t border-gray-300 px-4 py-1 text-xs text-gray-600 flex items-center gap-4 shadow-inner">
+                <span class="bg-white px-3 py-0.5 rounded border border-gray-300 cursor-pointer hover:bg-gray-50">Sheet1</span>
+                <span class="text-gray-400">+</span>
+                <div class="flex-1"></div>
+                <span>就绪</span>
+                <span>|</span>
+                <span>100%</span>
+                <span>|</span>
+                <span>普通视图</span>
             </div>
         </div>
     `;
@@ -924,68 +999,121 @@ function generateExcelDisguise() {
 
 function generateCodeDisguise() {
     const codeLines = [
-        'function calculateSalary(employees) {',
-        '  let totalPayroll = 0;',
-        '  const results = [];',
+        'const express = require(\'express\');',
+        'const mongoose = require(\'mongoose\');',
+        'const cors = require(\'cors\');',
         '',
-        '  for (let i = 0; i < employees.length; i++) {',
-        '    const emp = employees[i];',
-        '    const baseSalary = emp.baseSalary;',
-        '    const performance = emp.performance * 0.3;',
-        '    const allowance = emp.allowance;',
-        '    const deduction = emp.deduction;',
+        'const app = express();',
+        'const PORT = process.env.PORT || 3000;',
         '',
-        '    const netSalary = baseSalary + performance + allowance - deduction;',
-        '    totalPayroll += netSalary;',
+        'app.use(cors());',
+        'app.use(express.json());',
         '',
-        '    results.push({',
-        '      id: emp.id,',
-        '      name: emp.name,',
-        '      netSalary: netSalary,',
-        '      date: new Date().toISOString()',
-        '    });',
-        '  }',
+        'mongoose.connect(process.env.MONGODB_URI, {',
+        '  useNewUrlParser: true,',
+        '  useUnifiedTopology: true',
+        '}).then(() => {',
+        '  console.log(\'Connected to MongoDB\');',
+        '}).catch(err => {',
+        '  console.error(\'MongoDB connection error:\', err);',
+        '});',
         '',
-        '  console.log("Total payroll:", totalPayroll);',
-        '  return { results, totalPayroll };',
-        '}',
+        'const employeeRoutes = require(\'./routes/employees\');',
+        'const payrollRoutes = require(\'./routes/payroll\');',
         '',
-        '// 月度薪资核算',
-        'async function processMonthlyPayroll(month) {',
-        '  const employees = await fetchEmployees();',
-        '  const payroll = calculateSalary(employees);',
-        '  await savePayroll(payroll);',
-        '  return payroll;',
-        '}',
+        'app.use(\'/api/employees\', employeeRoutes);',
+        'app.use(\'/api/payroll\', payrollRoutes);',
+        '',
+        'app.get(\'/api/health\', (req, res) => {',
+        '  res.json({ status: \'ok\', timestamp: new Date().toISOString() });',
+        '});',
+        '',
+        'app.listen(PORT, () => {',
+        '  console.log(`Server running on port ${PORT}`);',
+        '});',
+        '',
+        '// Employee Model',
+        'const EmployeeSchema = new mongoose.Schema({',
+        '  name: { type: String, required: true },',
+        '  department: { type: String, required: true },',
+        '  position: { type: String, required: true },',
+        '  salary: { type: Number, required: true },',
+        '  hireDate: { type: Date, default: Date.now },',
+        '  isActive: { type: Boolean, default: true }',
+        '});',
+        '',
+        'module.exports = mongoose.model(\'Employee\', EmployeeSchema);',
     ];
     
     return `
-        <div class="w-full h-full bg-[#1e1e1e] text-gray-300 font-mono text-sm overflow-auto">
-            <div class="bg-[#323233] px-4 py-2 flex items-center gap-2 text-xs">
-                <span class="text-gray-400">📁 payroll.js</span>
-                <span class="ml-auto text-gray-500">Visual Studio Code</span>
-            </div>
-            <div class="flex">
-                <div class="bg-[#252526] w-12 py-4 text-right pr-3 text-gray-600 text-xs select-none">
-                    ${codeLines.map((_, i) => `<div>${i + 1}</div>`).join('')}
+        <div class="w-full h-full bg-[#1e1e1e] text-gray-300 font-mono text-sm overflow-hidden select-none">
+            <div class="flex h-full">
+                <div class="w-16 bg-[#252526] border-r border-[#3c3c3c] p-2 text-xs">
+                    <div class="text-gray-500 mb-1">📁 EXPLORER</div>
+                    <div class="text-gray-400 mb-1">📂 src</div>
+                    <div class="pl-2 text-gray-300">📄 server.js</div>
+                    <div class="pl-2 text-gray-300">📄 app.js</div>
+                    <div class="text-gray-400 mb-1">📂 routes</div>
+                    <div class="pl-2 text-gray-300">📄 employees.js</div>
+                    <div class="pl-2 text-gray-300">📄 payroll.js</div>
+                    <div class="text-gray-400 mb-1">📂 models</div>
+                    <div class="pl-2 text-gray-300">📄 Employee.js</div>
+                    <div class="pl-2 text-gray-300">📄 Payroll.js</div>
                 </div>
-                <div class="flex-1 py-4 pl-4">
-                    ${codeLines.map(line => {
-                        let colored = line
-                            .replace(/function/g, '<span class="text-purple-400">function</span>')
-                            .replace(/const/g, '<span class="text-blue-400">const</span>')
-                            .replace(/let/g, '<span class="text-blue-400">let</span>')
-                            .replace(/async/g, '<span class="text-purple-400">async</span>')
-                            .replace(/await/g, '<span class="text-purple-400">await</span>')
-                            .replace(/for/g, '<span class="text-purple-400">for</span>')
-                            .replace(/if/g, '<span class="text-purple-400">if</span>')
-                            .replace(/return/g, '<span class="text-purple-400">return</span>')
-                            .replace(/console\.log/g, '<span class="text-yellow-300">console.log</span>')
-                            .replace(/"([^"]*)"/g, '<span class="text-orange-300">"$1"</span>')
-                            .replace(/\/\/.*/g, '<span class="text-gray-600">$&</span>')
-                            .replace(/\d+/g, '<span class="text-green-400">$&</span>');
-                        return `<div>${colored || '&nbsp;'}</div>`;
-                    }).join('')}
+                <div class="flex-1 flex flex-col">
+                    <div class="bg-[#252526] border-b border-[#3c3c3c] px-4 py-1 flex items-center gap-2">
+                        <span class="text-xs text-gray-400">server.js</span>
+                        <span class="text-xs text-gray-500">●</span>
+                        <div class="flex-1"></div>
+                        <span class="text-xs text-gray-500">JavaScript</span>
+                        <span class="text-xs text-green-500">✓</span>
+                        <span class="w-6 h-6 bg-red-500 rounded flex items-center justify-center text-xs cursor-pointer hover:bg-red-600 ml-2" onclick="deactivateDisguise()">✕</span>
+                    </div>
+                    <div class="flex border-b border-[#3c3c3c] bg-[#323233]">
+                        <div class="flex gap-1 p-1">
+                            <button class="px-2 py-1 text-xs bg-[#252526] hover:bg-[#3c3c3c] rounded text-gray-400">📝</button>
+                            <button class="px-2 py-1 text-xs bg-[#252526] hover:bg-[#3c3c3c] rounded text-gray-400">🔍</button>
+                            <button class="px-2 py-1 text-xs bg-[#252526] hover:bg-[#3c3c3c] rounded text-gray-400">⬅️</button>
+                            <button class="px-2 py-1 text-xs bg-[#252526] hover:bg-[#3c3c3c] rounded text-gray-400">➡️</button>
+                            <button class="px-2 py-1 text-xs bg-[#252526] hover:bg-[#3c3c3c] rounded text-gray-400">⬆️</button>
+                            <button class="px-2 py-1 text-xs bg-[#252526] hover:bg-[#3c3c3c] rounded text-gray-400">⬇️</button>
+                        </div>
+                        <div class="flex-1 flex items-center justify-center">
+                            <span class="text-xs text-gray-500">UTF-8</span>
+                        </div>
+                        <div class="flex items-center gap-4 px-4 text-xs text-gray-500">
+                            <span>LF</span>
+                            <span>JavaScript</span>
+                            <span>Ln 28, Col 12</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-auto">
+                        <div class="flex">
+                            <div class="bg-[#252526] w-12 py-4 text-right pr-3 text-gray-600 text-xs">
+                                ${codeLines.map((_, i) => `<div>${i + 1}</div>`).join('')}
+                            </div>
+                            <div class="flex-1 py-4 pl-4">
+                                ${codeLines.map(line => {
+                                    let colored = line
+                                        .replace(/const|require|module\.exports/g, '<span class="text-yellow-400">$&</span>')
+                                        .replace(/function|new|class|return/g, '<span class="text-purple-400">$&</span>')
+                                        .replace(/mongoose|express|cors/g, '<span class="text-green-400">$&</span>')
+                                        .replace(/app\.|mongoose\./g, '<span class="text-green-400">$&</span>')
+                                        .replace(/'[^']*'/g, '<span class="text-orange-300">$&</span>')
+                                        .replace(/\d+/g, '<span class="text-blue-400">$&</span>')
+                                        .replace(/\/\/.*/g, '<span class="text-gray-600 italic">$&</span>')
+                                        .replace(/true|false|null|undefined/g, '<span class="text-blue-400">$&</span>');
+                                    return `<div>${colored || '&nbsp;'}</div>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-[#252526] border-t border-[#3c3c3c] px-4 py-1 text-xs text-gray-500">
+                        <span>TERMINAL</span>
+                        <span class="ml-2">node server.js</span>
+                        <span class="ml-2 text-green-400">Server running on port 3000</span>
+                        <span class="ml-2 text-green-400">Connected to MongoDB</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1076,22 +1204,20 @@ async function init() {
     await loadConfig();
     
     const loggedIn = await checkLogin();
-    if (loggedIn) {
-        refreshAllData();
+    if (!loggedIn) {
+        await autoCreateUser();
     }
     
+    refreshAllData();
+    
     setInterval(() => {
-        if (currentUser) {
-            refreshUsers();
-            refreshMessages();
-            refreshStats();
-        }
+        refreshUsers();
+        refreshMessages();
+        refreshStats();
     }, 10000);
     
     setInterval(() => {
-        if (currentUser) {
-            refreshRanking();
-        }
+        refreshRanking();
     }, 60000);
 
     setInterval(() => {
