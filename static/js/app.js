@@ -354,9 +354,11 @@ async function saveProfile() {
 function toggleMusicPanel() {
     const panel = document.getElementById('music-panel');
     panel.classList.toggle('hidden');
-    if (!panel.classList.contains('hidden')) {
-        initMusicPlayer();
-    }
+}
+
+function toggleVideoPanel() {
+    const panel = document.getElementById('video-panel');
+    panel.classList.toggle('hidden');
 }
 
 let audioPlayer = null;
