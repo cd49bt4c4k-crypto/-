@@ -4,7 +4,7 @@ import random
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, HTTPException, Header, Query
+from fastapi import FastAPI, Depends, HTTPException, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -33,6 +33,12 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+def ensure_db_initialized(db: Session = Depends(get_db)):
+    Base.metadata.create_all(bind=engine)
+    init_ai_users(db)
+    return db
 
 
 @app.get("/")
@@ -734,3 +740,15 @@ def startup_event():
         print(f"Startup error: {e}")
     finally:
         db.close()
+
+
+@app.middleware("http")
+async def ensure_ai_users_middleware(request: Request, call_next):
+    try:
+        db = next(get_db())
+        init_ai_users(db)
+        db.close()
+    except Exception:
+        pass
+    response = await call_next(request)
+    return response
