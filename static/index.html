@@ -450,7 +450,7 @@
                         ☕ 茶水间
                     </button>
                     <button onclick="switchView('meeting')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all" data-view="meeting">
-                        📊 会议室
+                        💬 企业群聊
                     </button>
                     <button onclick="switchView('rooftop')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all" data-view="rooftop">
                         🌃 天台
@@ -480,7 +480,7 @@
                                 ☕ 茶水间
                             </div>
                             <div class="room-door bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-800 dark:text-blue-200 w-20 h-14" style="bottom: 10px; left: 140px;" onclick="switchView('meeting')">
-                                📊 会议室
+                                💬 群聊
                             </div>
                             <div class="room-door bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 text-purple-800 dark:text-purple-200 w-20 h-14" style="bottom: 10px; right: 140px;" onclick="switchView('boss')">
                                 👔 老板室
@@ -520,7 +520,7 @@
                     <div id="meeting-scene" class="view-scene hidden">
                         <div class="isometric-floor relative" style="width: 600px; height: 400px;">
                             <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-lg"></div>
-                            <div class="area-label" style="top: 20px; left: 50%; transform: translateX(-50%);">📊 会议室 - 话题投票</div>
+                            <div class="area-label" style="top: 20px; left: 50%; transform: translateX(-50%);">💬 企业群聊 - 全员讨论</div>
                             
                             <div class="absolute" style="top: 100px; left: 50%; transform: translateX(-50%);">
                                 <div class="w-48 h-20 bg-gradient-to-br from-stone-400 to-stone-500 dark:from-stone-700 dark:to-stone-800 rounded-full"></div>
@@ -844,42 +844,18 @@
 
     <div id="vote-panel" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl hidden z-50 overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">📊 会议室投票</h3>
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">💬 企业群聊</h3>
             <button onclick="closeVotePanel()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
         </div>
         <div class="p-4">
-            <button onclick="showCreateVote()" class="w-full mb-4 py-2.5 border-2 border-dashed border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 rounded-lg hover:border-indigo-400 hover:text-indigo-500 transition-colors text-sm">
-                + 发起新投票
-            </button>
-            <div id="vote-list" class="space-y-3 max-h-80 overflow-y-auto scrollbar-thin">
+            <div id="chat-list" class="space-y-3 max-h-80 overflow-y-auto scrollbar-thin">
                 <div class="text-center text-sm text-slate-400 py-8">加载中...</div>
             </div>
-        </div>
-    </div>
-
-    <div id="create-vote-modal" class="modal-backdrop hidden">
-        <div class="modal-content bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">发起投票</h3>
-                <button onclick="closeCreateVote()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
-            </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">投票主题</label>
-                    <input type="text" id="vote-title" placeholder="例：今天中午吃什么？" maxlength="100" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">选项（至少2个）</label>
-                    <div id="vote-options-container" class="space-y-2">
-                        <input type="text" placeholder="选项1" class="vote-option-input w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
-                        <input type="text" placeholder="选项2" class="vote-option-input w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
-                    </div>
-                    <button onclick="addVoteOption()" class="mt-2 text-sm text-indigo-500 hover:text-indigo-600">+ 添加选项</button>
-                </div>
-            </div>
-            <div class="p-6 pt-0 flex gap-3">
-                <button onclick="closeCreateVote()" class="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700">取消</button>
-                <button onclick="createVote()" class="flex-1 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg hover:opacity-90">发起投票</button>
+            <div class="flex gap-2 mt-4">
+                <input type="text" id="chat-input" placeholder="发送群消息..." maxlength="200" class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                <button onclick="sendChatMessage()" class="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-medium rounded-lg">
+                    发送
+                </button>
             </div>
         </div>
     </div>

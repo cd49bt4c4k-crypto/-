@@ -83,17 +83,12 @@ const API = {
         method: 'POST',
     }),
     
-    createVote: (data) => apiRequest('/votes', {
+    sendChatMessage: (data) => apiRequest('/chat', {
         method: 'POST',
         body: JSON.stringify(data),
     }),
     
-    getVotes: () => apiRequest('/votes'),
-    
-    submitVote: (data) => apiRequest('/votes/submit', {
-        method: 'POST',
-        body: JSON.stringify(data),
-    }),
+    getChatMessages: (limit = 100) => apiRequest(`/chat?limit=${limit}`),
     
     enterBossOffice: () => apiRequest('/boss-office/enter', {
         method: 'POST',

@@ -754,109 +754,53 @@ function closeComplaintPanel() {
     document.getElementById('complaint-panel').classList.add('hidden');
 }
 
-async function loadVotes() {
+async function loadChatMessages() {
     try {
-        const votes = await API.getVotes();
-        renderVotes(votes);
+        const messages = await API.getChatMessages();
+        renderChatMessages(messages);
     } catch (e) {
-        console.error('Failed to load votes:', e);
+        console.error('Failed to load chat messages:', e);
     }
 }
 
-function renderVotes(votes) {
-    const container = document.getElementById('vote-list');
+function renderChatMessages(messages) {
+    const container = document.getElementById('chat-list');
     
-    if (!votes || votes.length === 0) {
-        container.innerHTML = '<div class="text-center text-sm text-slate-400 py-8">暂无投票，发起一个吧！</div>';
+    if (!messages || messages.length === 0) {
+        container.innerHTML = '<div class="text-center text-sm text-slate-400 py-8">群里还没人说话，先来打个招呼吧！</div>';
         return;
     }
     
-    container.innerHTML = votes.map(v => {
-        const maxVotes = Math.max(...v.vote_counts, 1);
-        
+    container.innerHTML = messages.map(msg => {
+        const isMe = currentUser && currentUser.id === msg.user_id;
         return `
-            <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="text-sm font-semibold text-slate-800 dark:text-slate-100">${v.title}</span>
-                    <span class="text-xs text-slate-400 ml-auto">${v.total_votes}人参与</span>
+            <div class="flex items-start gap-2 ${isMe ? 'flex-row-reverse' : ''}">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0" style="background: ${msg.avatar_color}">
+                    ${msg.nickname.charAt(0)}
                 </div>
-                <div class="space-y-2">
-                    ${v.options.map((opt, idx) => {
-                        const percentage = v.total_votes > 0 ? Math.round(v.vote_counts[idx] / v.total_votes * 100) : 0;
-                        return `
-                            <div onclick="submitVote(${v.id}, ${idx})" class="relative cursor-pointer">
-                                <div class="relative z-10 flex items-center justify-between p-2 text-sm">
-                                    <span class="text-slate-700 dark:text-slate-200">${opt}</span>
-                                    <span class="text-slate-500 dark:text-slate-400">${v.vote_counts[idx]}票 (${percentage}%)</span>
-                                </div>
-                                <div class="absolute inset-0 bg-indigo-100 dark:bg-indigo-900/30 rounded transition-all" style="width: ${percentage}%"></div>
-                            </div>
-                        `;
-                    }).join('')}
+                <div class="max-w-[70%]">
+                    <div class="text-xs text-slate-500 dark:text-slate-400 mb-0.5">${msg.nickname} ${formatTime(msg.created_at)}</div>
+                    <div class="${isMe ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200'} px-3 py-1.5 rounded-lg rounded-tl-none text-sm break-words">
+                        ${msg.content}
+                    </div>
                 </div>
-                <div class="text-xs text-slate-400 mt-3">发起人：${v.creator_nickname}</div>
             </div>
         `;
     }).join('');
-}
-
-async function submitVote(voteId, optionIndex) {
-    try {
-        await API.submitVote({ vote_id: voteId, option_index: optionIndex });
-        loadVotes();
-        showToast('投票成功！', 'success');
-    } catch (e) {
-        showToast(e.message, 'error');
-    }
-}
-
-function showCreateVote() {
-    document.getElementById('create-vote-modal').classList.remove('hidden');
-    document.getElementById('vote-title').value = '';
-    document.getElementById('vote-options-container').innerHTML = `
-        <input type="text" placeholder="选项1" class="vote-option-input w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
-        <input type="text" placeholder="选项2" class="vote-option-input w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
-    `;
-}
-
-function closeCreateVote() {
-    document.getElementById('create-vote-modal').classList.add('hidden');
-}
-
-function addVoteOption() {
-    const container = document.getElementById('vote-options-container');
-    const count = container.children.length;
-    if (count >= 6) {
-        showToast('最多6个选项', 'warning');
-        return;
-    }
     
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = `选项${count + 1}`;
-    input.className = 'vote-option-input w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm';
-    container.appendChild(input);
+    container.scrollTop = container.scrollHeight;
 }
 
-async function createVote() {
-    const title = document.getElementById('vote-title').value.trim();
-    const optionInputs = document.querySelectorAll('.vote-option-input');
-    const options = Array.from(optionInputs).map(i => i.value.trim()).filter(v => v);
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const content = input.value.trim();
     
-    if (!title) {
-        showToast('请输入投票主题', 'error');
-        return;
-    }
-    if (options.length < 2) {
-        showToast('至少需要2个选项', 'error');
-        return;
-    }
+    if (!content) return;
     
     try {
-        await API.createVote({ title, options });
-        closeCreateVote();
-        loadVotes();
-        showToast('投票创建成功！', 'success');
+        await API.sendChatMessage({ content });
+        input.value = '';
+        loadChatMessages();
     } catch (e) {
         showToast(e.message, 'error');
     }
@@ -864,7 +808,9 @@ async function createVote() {
 
 function openVotePanel() {
     document.getElementById('vote-panel').classList.remove('hidden');
-    loadVotes();
+    loadChatMessages();
+    
+    setInterval(loadChatMessages, 3000);
 }
 
 function closeVotePanel() {

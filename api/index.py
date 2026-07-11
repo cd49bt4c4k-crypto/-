@@ -52,9 +52,41 @@ def read_root():
 def get_current_user(session_id: str = Header(None), db: Session = Depends(get_db)):
     if not session_id:
         raise HTTPException(status_code=401, detail="未登录")
+    
     user = db.query(models.User).filter(models.User.session_id == session_id).first()
+    
     if not user:
         raise HTTPException(status_code=401, detail="用户不存在")
+    
+    user.last_active = datetime.now()
+    db.commit()
+    return user
+
+
+def get_or_create_user(session_id: str = Header(None), db: Session = Depends(get_db)):
+    if not session_id:
+        session_id = 'session_' + str(random.randint(100000, 999999))
+    
+    user = db.query(models.User).filter(models.User.session_id == session_id).first()
+    
+    if not user:
+        guest_nicknames = ['匿名同事', '神秘访客', '职场新人', '实习生小王', '新入职员工', '打工人小李', '摸鱼大师', '代码狂人']
+        random_nickname = guest_nicknames[random.randint(0, len(guest_nicknames) - 1)]
+        
+        user = models.User(
+            nickname=random_nickname,
+            position=utils.get_random_position(),
+            area=utils.get_random_area(),
+            status=utils.get_random_status(),
+            reputation=50,
+            is_ai=False,
+            avatar_color=utils.get_random_avatar_color(),
+            session_id=session_id,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
     user.last_active = datetime.now()
     db.commit()
     return user
@@ -171,7 +203,7 @@ def get_users(
 @app.post("/api/messages", response_model=schemas.MessageResponse)
 def create_message(
     msg_data: schemas.MessageCreate,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_or_create_user),
     db: Session = Depends(get_db),
 ):
     filtered_text, has_sensitive = filter_sensitive_words(msg_data.content)
@@ -241,7 +273,7 @@ def get_messages(
 @app.post("/api/gifts", response_model=schemas.GiftResponse)
 def send_gift(
     gift_data: schemas.GiftCreate,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_or_create_user),
     db: Session = Depends(get_db),
 ):
     if gift_data.from_user_id == gift_data.to_user_id:
@@ -316,7 +348,7 @@ def get_received_gifts(
 @app.post("/api/complaints", response_model=schemas.ComplaintResponse)
 def create_complaint(
     data: schemas.ComplaintCreate,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_or_create_user),
     db: Session = Depends(get_db),
 ):
     filtered_text, has_sensitive = filter_sensitive_words(data.content)
@@ -377,7 +409,7 @@ def get_complaints(
 @app.post("/api/complaints/{complaint_id}/like")
 def like_complaint(
     complaint_id: int,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_or_create_user),
     db: Session = Depends(get_db),
 ):
     complaint = db.query(models.Complaint).filter(models.Complaint.id == complaint_id).first()
@@ -388,114 +420,77 @@ def like_complaint(
     return {"likes": complaint.likes}
 
 
-@app.post("/api/votes", response_model=schemas.VoteResponse)
-def create_vote(
-    data: schemas.VoteCreate,
-    current_user: models.User = Depends(get_current_user),
+@app.post("/api/chat", response_model=schemas.MessageResponse)
+def send_chat_message(
+    msg_data: schemas.ChatCreate,
+    current_user: models.User = Depends(get_or_create_user),
     db: Session = Depends(get_db),
 ):
-    if contains_sensitive_word(data.title):
-        raise HTTPException(status_code=400, detail="投票标题包含敏感词")
-    for opt in data.options:
-        if contains_sensitive_word(opt):
-            raise HTTPException(status_code=400, detail="投票选项包含敏感词")
+    filtered_text, has_sensitive = filter_sensitive_words(msg_data.content)
+    if has_sensitive:
+        raise HTTPException(status_code=400, detail="消息包含敏感词，请修改")
 
-    vote = models.Vote(
-        title=data.title,
-        options=json.dumps(data.options, ensure_ascii=False),
-        creator_id=current_user.id,
+    message = models.Message(
+        user_id=current_user.id,
+        content=filtered_text,
+        area="group_chat",
+        message_type="chat",
     )
-    db.add(vote)
+    db.add(message)
     db.commit()
-    db.refresh(vote)
+    db.refresh(message)
 
-    options_list = json.loads(vote.options)
-    result = schemas.VoteResponse(
-        id=vote.id,
-        title=vote.title,
-        options=options_list,
-        creator_id=vote.creator_id,
-        creator_nickname=current_user.nickname,
-        is_active=vote.is_active,
-        vote_counts=[0] * len(options_list),
-        total_votes=0,
-        created_at=vote.created_at,
+    result = schemas.MessageResponse(
+        id=message.id,
+        user_id=message.user_id,
+        nickname=current_user.nickname,
+        avatar_color=current_user.avatar_color,
+        content=message.content,
+        area="group_chat",
+        message_type="chat",
+        created_at=message.created_at,
     )
     return result
 
 
-@app.get("/api/votes", response_model=List[schemas.VoteResponse])
-def get_votes(
-    active_only: bool = True,
+@app.get("/api/chat", response_model=List[schemas.MessageResponse])
+def get_chat_messages(
+    limit: int = 100,
     db: Session = Depends(get_db),
 ):
-    query = db.query(models.Vote)
-    if active_only:
-        query = query.filter(models.Vote.is_active == True)
+    messages = db.query(
+        models.Message.id,
+        models.Message.user_id,
+        models.Message.content,
+        models.Message.area,
+        models.Message.message_type,
+        models.Message.created_at,
+        models.User.nickname,
+        models.User.avatar_color,
+    ).join(models.User, models.Message.user_id == models.User.id)\
+     .filter(models.Message.message_type == "chat")\
+     .order_by(models.Message.created_at.desc())\
+     .limit(limit)\
+     .all()
 
-    votes = query.order_by(models.Vote.created_at.desc()).limit(20).all()
     result = []
-
-    for vote in votes:
-        options_list = json.loads(vote.options)
-        creator = db.query(models.User).filter(models.User.id == vote.creator_id).first()
-        records = db.query(models.VoteRecord).filter(models.VoteRecord.vote_id == vote.id).all()
-
-        vote_counts = [0] * len(options_list)
-        for r in records:
-            if 0 <= r.option_index < len(options_list):
-                vote_counts[r.option_index] += 1
-
-        result.append(schemas.VoteResponse(
-            id=vote.id,
-            title=vote.title,
-            options=options_list,
-            creator_id=vote.creator_id,
-            creator_nickname=creator.nickname if creator else "未知",
-            is_active=vote.is_active,
-            vote_counts=vote_counts,
-            total_votes=len(records),
-            created_at=vote.created_at,
+    for msg in messages:
+        result.append(schemas.MessageResponse(
+            id=msg.id,
+            user_id=msg.user_id,
+            nickname=msg.nickname,
+            avatar_color=msg.avatar_color,
+            content=msg.content,
+            area=msg.area,
+            message_type=msg.message_type,
+            created_at=msg.created_at,
         ))
     return result
 
 
-@app.post("/api/votes/submit")
-def submit_vote(
-    data: schemas.VoteSubmit,
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    vote = db.query(models.Vote).filter(models.Vote.id == data.vote_id).first()
-    if not vote:
-        raise HTTPException(status_code=404, detail="投票不存在")
-    if not vote.is_active:
-        raise HTTPException(status_code=400, detail="投票已结束")
-
-    existing = db.query(models.VoteRecord).filter(
-        models.VoteRecord.vote_id == data.vote_id,
-        models.VoteRecord.user_id == current_user.id,
-    ).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="你已经投过票了")
-
-    options_list = json.loads(vote.options)
-    if data.option_index < 0 or data.option_index >= len(options_list):
-        raise HTTPException(status_code=400, detail="无效的选项")
-
-    record = models.VoteRecord(
-        vote_id=data.vote_id,
-        user_id=current_user.id,
-        option_index=data.option_index,
-    )
-    db.add(record)
-    db.commit()
-    return {"success": True}
-
-
 @app.post("/api/boss-office/enter", response_model=schemas.BossEventResponse)
 def enter_boss_office(
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_or_create_user),
     db: Session = Depends(get_db),
 ):
     event = utils.get_random_boss_event()

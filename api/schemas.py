@@ -90,29 +90,8 @@ class ComplaintResponse(BaseModel):
         from_attributes = True
 
 
-class VoteCreate(BaseModel):
-    title: str
-    options: List[str]
-
-
-class VoteResponse(BaseModel):
-    id: int
-    title: str
-    options: List[str]
-    creator_id: int
-    creator_nickname: str
-    is_active: bool
-    vote_counts: List[int]
-    total_votes: int
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class VoteSubmit(BaseModel):
-    vote_id: int
-    option_index: int
+class ChatCreate(BaseModel):
+    content: str = Field(max_length=200)
 
 
 class BossEventResponse(BaseModel):
