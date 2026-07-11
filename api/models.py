@@ -9,6 +9,9 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nickname = Column(String(20), unique=True, index=True)
+    gender = Column(String(10), nullable=True)
+    age = Column(Integer, nullable=True)
+    occupation = Column(String(50), nullable=True)
     position = Column(String(20))
     area = Column(String(20))
     status = Column(String(30))

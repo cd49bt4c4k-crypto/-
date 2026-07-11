@@ -14,7 +14,10 @@ def format_beijing_time(v: datetime) -> str:
 
 
 class UserCreate(BaseModel):
-    nickname: str = Field(min_length=2, max_length=10)
+    nickname: str = Field(min_length=2, max_length=20)
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    occupation: Optional[str] = None
     position: str
     area: str
     status: str
@@ -23,6 +26,9 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     nickname: Optional[str] = None
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    occupation: Optional[str] = None
     position: Optional[str] = None
     area: Optional[str] = None
     status: Optional[str] = None
@@ -31,6 +37,9 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     nickname: str
+    gender: Optional[str] = None
+    age: Optional[int] = None
+    occupation: Optional[str] = None
     position: str
     area: str
     status: str

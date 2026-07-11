@@ -41,7 +41,6 @@ function initDarkMode() {
 
 function formatTime(dateStr) {
     if (!dateStr) return '';
-
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
 
@@ -58,7 +57,6 @@ function formatTime(dateStr) {
 
     const parts = fmt.formatToParts(d);
     const get = (type) => parts.find(p => p.type === type)?.value || '00';
-
     return `${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`;
 }
 
@@ -73,16 +71,26 @@ async function checkLogin() {
     }
 }
 
-async function autoCreateUser() {
-    try {
-        const guestNicknames = ['匿名同事', '神秘访客', '职场新人', '实习生小王', '新入职员工'];
-        const nickname = guestNicknames[Math.floor(Math.random() * guestNicknames.length)];
-        const position = DEFAULT_CONFIG.positions[Math.floor(Math.random() * DEFAULT_CONFIG.positions.length)];
-        const area = DEFAULT_CONFIG.areas[Math.floor(Math.random() * DEFAULT_CONFIG.areas.length)];
-        const status = DEFAULT_CONFIG.statuses[Math.floor(Math.random() * DEFAULT_CONFIG.statuses.length)];
+async function handleRegister() {
+    const nickname = document.getElementById('reg-nickname').value.trim();
+    const gender = document.querySelector('input[name="gender"]:checked')?.value;
+    const age = parseInt(document.getElementById('reg-age').value) || null;
+    const occupation = document.getElementById('reg-occupation').value.trim() || null;
+    const position = document.getElementById('reg-position').value;
+    const area = document.getElementById('reg-area').value;
+    const status = document.getElementById('reg-status').value;
 
+    if (!nickname || nickname.length < 2 || nickname.length > 20) {
+        showToast('昵称需要2-20个字符', 'error');
+        return;
+    }
+
+    try {
         const user = await API.register({
             nickname,
+            gender,
+            age,
+            occupation,
             position,
             area,
             status,
@@ -90,12 +98,31 @@ async function autoCreateUser() {
         });
 
         currentUser = user;
+        document.getElementById('login-modal').classList.add('hidden');
         document.getElementById('my-nickname').textContent = user.nickname;
-        return true;
+        showToast('注册成功！欢迎加入~', 'success');
+
+        await loadChatMessages();
+        await refreshStats();
+        await loadUsers();
     } catch (e) {
-        console.error('Auto create user failed:', e);
-        showToast('自动登录失败：' + e.message, 'error');
-        return false;
+        showToast(e.message, 'error');
+    }
+}
+
+function toggleDisguise() {
+    const body = document.body;
+    const btn = document.getElementById('disguise-btn');
+    const isDisguised = body.classList.contains('disguise-mode');
+
+    if (isDisguised) {
+        body.classList.remove('disguise-mode');
+        btn.textContent = '🛡️ 伪装工作';
+        showToast('已退出伪装模式', 'info');
+    } else {
+        body.classList.add('disguise-mode');
+        btn.textContent = '💬 返回聊天';
+        showToast('已切换到伪装模式', 'info');
     }
 }
 
@@ -118,6 +145,7 @@ function renderChatMessages(messages) {
 
     container.innerHTML = messages.map(msg => {
         const isMe = currentUser && currentUser.id === msg.user_id;
+        const content = formatMessageContent(msg.content);
         return `
             <div class="flex items-start gap-2.5 ${isMe ? 'flex-row-reverse' : ''} animate-slide-up">
                 <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 shadow-sm" style="background: ${msg.avatar_color}">
@@ -128,7 +156,7 @@ function renderChatMessages(messages) {
                         ${msg.nickname} · ${formatTime(msg.created_at)}
                     </div>
                     <div class="${isMe ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-slate-700'} px-3.5 py-2 rounded-2xl text-sm break-words shadow-sm">
-                        ${escapeHtml(msg.content)}
+                        ${content}
                     </div>
                 </div>
             </div>
@@ -136,6 +164,11 @@ function renderChatMessages(messages) {
     }).join('');
 
     container.scrollTop = container.scrollHeight;
+}
+
+function formatMessageContent(content) {
+    if (!content) return '';
+    return content.replace(/@(\S+)/g, '<span class="text-blue-500 dark:text-blue-400 font-medium">@$1</span>');
 }
 
 function escapeHtml(text) {
@@ -175,19 +208,122 @@ async function refreshStats() {
     }
 }
 
+async function loadUsers() {
+    try {
+        const users = await API.getUsers();
+        renderUserList(users);
+    } catch (e) {
+        console.error('Failed to load users:', e);
+    }
+}
+
+function renderUserList(users) {
+    const container = document.getElementById('user-list');
+    
+    if (!users || users.length === 0) {
+        container.innerHTML = '<div class="text-center text-sm text-slate-400 py-4">暂无成员</div>';
+        return;
+    }
+
+    const sortedUsers = users.sort((a, b) => {
+        if (a.is_ai !== b.is_ai) return a.is_ai ? 1 : -1;
+        return 0;
+    });
+
+    container.innerHTML = sortedUsers.map(user => {
+        const isMe = currentUser && currentUser.id === user.id;
+        return `
+            <div class="flex items-center gap-2 p-2 rounded-lg ${isMe ? 'bg-green-50 dark:bg-green-900/20' : 'hover:bg-slate-100 dark:hover:bg-slate-700'} cursor-pointer transition-colors"
+                 onclick="insertMention('${user.nickname}')">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-medium"
+                     style="background: ${user.avatar_color}">
+                    ${user.nickname.charAt(0)}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">${user.nickname}</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 truncate">${user.position}</div>
+                </div>
+                ${!user.is_ai ? '<span class="w-2 h-2 rounded-full bg-green-500"></span>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function insertMention(nickname) {
+    const input = document.getElementById('chat-input');
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+    
+    input.value = text.substring(0, start) + '@' + nickname + ' ' + text.substring(end);
+    input.focus();
+    input.setSelectionRange(start + nickname.length + 2, start + nickname.length + 2);
+}
+
+function showEditProfile() {
+    if (!currentUser) return;
+
+    document.getElementById('edit-nickname').value = currentUser.nickname || '';
+    
+    const genderRadios = document.querySelectorAll('input[name="edit-gender"]');
+    genderRadios.forEach(r => r.checked = r.value === (currentUser.gender || '保密'));
+    
+    document.getElementById('edit-age').value = currentUser.age || '';
+    document.getElementById('edit-occupation').value = currentUser.occupation || '';
+    
+    document.getElementById('edit-profile-modal').classList.remove('hidden');
+}
+
+function closeEditProfile() {
+    document.getElementById('edit-profile-modal').classList.add('hidden');
+}
+
+async function saveProfile() {
+    const nickname = document.getElementById('edit-nickname').value.trim();
+    const gender = document.querySelector('input[name="edit-gender"]:checked')?.value;
+    const age = parseInt(document.getElementById('edit-age').value) || null;
+    const occupation = document.getElementById('edit-occupation').value.trim() || null;
+
+    const updates = {};
+    if (nickname && nickname !== currentUser.nickname) updates.nickname = nickname;
+    if (gender !== undefined && gender !== currentUser.gender) updates.gender = gender;
+    if (age !== null && age !== currentUser.age) updates.age = age;
+    if (occupation !== null && occupation !== currentUser.occupation) updates.occupation = occupation;
+
+    if (Object.keys(updates).length === 0) {
+        closeEditProfile();
+        return;
+    }
+
+    try {
+        const user = await API.updateMe(updates);
+        currentUser = user;
+        document.getElementById('my-nickname').textContent = user.nickname;
+        closeEditProfile();
+        showToast('资料更新成功', 'success');
+        await loadUsers();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
 async function init() {
     initDarkMode();
 
     const loggedIn = await checkLogin();
     if (!loggedIn) {
-        await autoCreateUser();
+        document.getElementById('login-modal').classList.remove('hidden');
+        return;
     }
 
+    document.getElementById('login-modal').classList.add('hidden');
     await loadChatMessages();
     await refreshStats();
+    await loadUsers();
 
     setInterval(loadChatMessages, 3000);
     setInterval(refreshStats, 10000);
+    setInterval(loadUsers, 15000);
 }
 
 init();

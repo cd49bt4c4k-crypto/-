@@ -107,6 +107,15 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     if contains_sensitive_word(user_data.nickname):
         raise HTTPException(status_code=400, detail="昵称包含敏感词，请修改")
 
+    if user_data.gender and user_data.gender not in ["男", "女", "保密"]:
+        raise HTTPException(status_code=400, detail="无效的性别")
+
+    if user_data.age and (user_data.age < 18 or user_data.age > 100):
+        raise HTTPException(status_code=400, detail="年龄必须在18-100之间")
+
+    if user_data.occupation and len(user_data.occupation) > 50:
+        raise HTTPException(status_code=400, detail="职业不能超过50个字符")
+
     if not utils.validate_position(user_data.position):
         raise HTTPException(status_code=400, detail="无效的岗位")
     if not utils.validate_area(user_data.area):
@@ -121,6 +130,9 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_session = db.query(models.User).filter(models.User.session_id == user_data.session_id).first()
     if existing_session:
         existing_session.nickname = user_data.nickname
+        existing_session.gender = user_data.gender
+        existing_session.age = user_data.age
+        existing_session.occupation = user_data.occupation
         existing_session.position = user_data.position
         existing_session.area = user_data.area
         existing_session.status = user_data.status
@@ -130,6 +142,9 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
     user = models.User(
         nickname=user_data.nickname,
+        gender=user_data.gender,
+        age=user_data.age,
+        occupation=user_data.occupation,
         position=user_data.position,
         area=user_data.area,
         status=user_data.status,
@@ -165,6 +180,21 @@ def update_user(
         if existing:
             raise HTTPException(status_code=400, detail="昵称已被占用")
         current_user.nickname = user_update.nickname
+
+    if user_update.gender is not None:
+        if user_update.gender not in ["男", "女", "保密"]:
+            raise HTTPException(status_code=400, detail="无效的性别")
+        current_user.gender = user_update.gender
+
+    if user_update.age is not None:
+        if user_update.age < 18 or user_update.age > 100:
+            raise HTTPException(status_code=400, detail="年龄必须在18-100之间")
+        current_user.age = user_update.age
+
+    if user_update.occupation is not None:
+        if len(user_update.occupation) > 50:
+            raise HTTPException(status_code=400, detail="职业不能超过50个字符")
+        current_user.occupation = user_update.occupation
 
     if user_update.position is not None:
         if not utils.validate_position(user_update.position):
@@ -426,6 +456,9 @@ def send_chat_message(
     current_user: models.User = Depends(get_or_create_user),
     db: Session = Depends(get_db),
 ):
+    if current_user.is_ai:
+        raise HTTPException(status_code=400, detail="AI用户不能发送群聊消息")
+
     filtered_text, has_sensitive = filter_sensitive_words(msg_data.content)
     if has_sensitive:
         raise HTTPException(status_code=400, detail="消息包含敏感词，请修改")
