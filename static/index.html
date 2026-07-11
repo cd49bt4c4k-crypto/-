@@ -15,20 +15,6 @@
                             500: '#6366F1',
                             600: '#4F46E5',
                         }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.2s ease-out',
-                        'slide-up': 'slideUp 0.2s ease-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        },
                     }
                 }
             }
@@ -37,7 +23,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
-
         .scrollbar-thin::-webkit-scrollbar { width: 6px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
@@ -52,68 +37,54 @@
             border-radius: 8px;
             color: white;
             font-size: 14px;
-            z-index: 300;
+            z-index: 1000;
             animation: slideDown 0.3s ease;
         }
-
         @keyframes slideDown {
             from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
 
-        .disguise-panel {
-            display: none;
+        .countdown-text {
+            background: linear-gradient(90deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .disguise-active .chat-container {
-            display: none !important;
-        }
-
-        .disguise-active .disguise-panel {
-            display: block !important;
-        }
-
-        .countdown-badge {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
+        .disguise-mode .chat-main { display: none !important; }
+        .disguise-mode .disguise-container { display: block !important; }
+        .disguise-container { display: none; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 h-screen flex flex-col overflow-hidden transition-colors duration-300">
-    <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+<body class="bg-slate-100 dark:bg-slate-900 h-screen overflow-hidden">
+    <div id="login-page" class="fixed inset-0 bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center z-50 p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-700">
-                <div class="text-center mb-4">
-                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white text-3xl">💬</div>
-                    <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">欢迎加入摸鱼闲聊群</h2>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">注册后即可开始聊天</p>
-                </div>
+            <div class="p-6 text-center bg-gradient-to-r from-green-500 to-emerald-500">
+                <div class="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl">💬</div>
+                <h1 class="text-2xl font-bold text-white">摸鱼闲聊群</h1>
+                <p class="text-green-100 text-sm mt-1">注册后即可开始聊天</p>
             </div>
 
-            <div class="p-6 space-y-4">
+            <div class="p-6 space-y-3">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">昵称 *</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">昵称 <span class="text-red-500">*</span></label>
                     <input type="text" id="reg-nickname" placeholder="请输入昵称（2-20字）" maxlength="20"
                         class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">性别（可选）</label>
-                    <div class="flex gap-3">
-                        <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                    <div class="flex gap-2">
+                        <label class="flex items-center gap-1.5 flex-1 cursor-pointer px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg border border-transparent hover:border-green-400 transition-colors">
                             <input type="radio" name="gender" value="男" class="w-4 h-4 text-green-500">
                             <span class="text-sm text-slate-700 dark:text-slate-200">男</span>
                         </label>
-                        <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                        <label class="flex items-center gap-1.5 flex-1 cursor-pointer px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg border border-transparent hover:border-green-400 transition-colors">
                             <input type="radio" name="gender" value="女" class="w-4 h-4 text-green-500">
                             <span class="text-sm text-slate-700 dark:text-slate-200">女</span>
                         </label>
-                        <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                        <label class="flex items-center gap-1.5 flex-1 cursor-pointer px-3 py-2 bg-slate-50 dark:bg-slate-700 rounded-lg border border-transparent hover:border-green-400 transition-colors">
                             <input type="radio" name="gender" value="保密" checked class="w-4 h-4 text-green-500">
                             <span class="text-sm text-slate-700 dark:text-slate-200">保密</span>
                         </label>
@@ -134,7 +105,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">岗位 *</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">岗位 <span class="text-red-500">*</span></label>
                     <select id="reg-position"
                         class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="前端">前端开发</option>
@@ -150,7 +121,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">工位区域 *</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">工位区域 <span class="text-red-500">*</span></label>
                     <select id="reg-area"
                         class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="普通办公区">普通办公区</option>
@@ -161,7 +132,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">当前状态 *</label>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">当前状态 <span class="text-red-500">*</span></label>
                     <select id="reg-status"
                         class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="认真敲代码">认真敲代码</option>
@@ -173,28 +144,29 @@
                     </select>
                 </div>
 
-                <button onclick="handleRegister()" class="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity mt-4">
+                <button onclick="doRegister()" class="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity mt-2 text-base">
                     注册加入
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="flex flex-1 overflow-hidden">
-        <div class="flex-1 flex flex-col chat-container">
-            <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 flex-shrink-0 z-20">
+    <div class="h-full flex chat-main">
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white text-lg">💬</div>
+                    <div class="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white">💬</div>
                     <div>
                         <h1 class="text-base font-bold text-slate-800 dark:text-slate-100">摸鱼闲聊群</h1>
                         <p class="text-xs text-slate-500 dark:text-slate-400"><span id="online-count">--</span> 人在线</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div id="countdown" class="countdown-badge px-3 py-1.5 text-xs font-bold text-white rounded-lg shadow-md hidden">
-                        ⏰ 下班倒计时: <span id="countdown-time">--:--:--</span>
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                        <span class="text-xs text-slate-500 dark:text-slate-400">⏰</span>
+                        <span id="countdown-time" class="text-sm font-mono font-bold text-slate-700 dark:text-slate-200">--:--:--</span>
                     </div>
-                    <button onclick="toggleDisguise()" id="disguise-btn" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800/30 transition-colors">
+                    <button onclick="toggleDisguise()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                         🛡️ 伪装工作
                     </button>
                     <span id="my-nickname" class="text-sm text-slate-700 dark:text-slate-200 hidden sm:inline">--</span>
@@ -204,38 +176,31 @@
                 </div>
             </header>
 
-            <main id="chat-list" class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin z-10 relative">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
                 <div class="text-center text-sm text-slate-400 py-8">加载中...</div>
-            </main>
+            </div>
 
-            <footer class="p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex-shrink-0 z-20">
-                <div class="max-w-3xl mx-auto">
-                    <div id="reply-indicator" class="hidden flex items-center gap-2 mb-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                        <span class="text-blue-500">↩</span>
-                        <span id="reply-indicator-text" class="text-sm text-blue-700 dark:text-blue-300"></span>
-                        <button onclick="clearReply()" class="ml-auto text-blue-500 hover:text-blue-700 dark:hover:text-blue-200">✕</button>
-                    </div>
-                    <div class="flex items-end gap-2">
-                        <button onclick="toggleMusicPanel()" class="p-2.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800/30 transition-colors">
-                            🎵
-                        </button>
-                        <input
-                            type="text"
-                            id="chat-input"
-                            placeholder="说点什么..."
-                            maxlength="500"
-                            class="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-                            onkeypress="handleChatKeypress(event)"
-                        />
-                        <button onclick="sendChatMessage()" class="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity">
-                            发送
-                        </button>
-                    </div>
+            <footer class="p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <div id="reply-bar" class="hidden items-center gap-2 mb-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <span class="text-blue-500 text-sm">↩ 回复</span>
+                    <span id="reply-target" class="text-sm text-blue-700 dark:text-blue-300 truncate"></span>
+                    <button onclick="cancelReply()" class="ml-auto text-blue-500 hover:text-blue-700 text-sm">✕</button>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button onclick="toggleMusicPanel()" class="p-2.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800/30 transition-colors flex-shrink-0" title="网易云音乐">
+                        🎵
+                    </button>
+                    <input type="text" id="chat-input" placeholder="说点什么..." maxlength="500"
+                        class="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}">
+                    <button onclick="sendMessage()" class="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-medium rounded-xl hover:opacity-90 transition-opacity flex-shrink-0">
+                        发送
+                    </button>
                 </div>
             </footer>
         </div>
 
-        <div class="w-80 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col hidden md:flex">
+        <div class="w-72 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col hidden lg:flex flex-shrink-0">
             <div class="p-4 border-b border-slate-200 dark:border-slate-700">
                 <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">在线成员</h3>
             </div>
@@ -250,191 +215,308 @@
         </div>
     </div>
 
-    <div id="disguise-panel" class="fixed inset-0 bg-[#1e1e1e] text-white p-6 font-mono text-sm overflow-auto z-40">
-        <div class="max-w-4xl mx-auto">
+    <div class="disguise-container fixed inset-0 bg-[#1e1e1e] text-white z-40 overflow-auto">
+        <div class="max-w-5xl mx-auto p-6">
             <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 text-sm text-gray-400">
                     <span class="text-green-400">λ</span>
-                    <span class="text-gray-400">workspace@dev-machine</span>
-                    <span class="text-gray-600">~</span>
+                    <span>workspace@dev-server</span>
+                    <span class="text-gray-600">~/project</span>
                 </div>
-                <button onclick="toggleDisguise()" class="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 rounded text-white">
-                    返回聊天
-                </button>
-            </div>
-
-            <div class="bg-[#252526] rounded-lg overflow-hidden mb-6">
-                <div class="flex items-center gap-2 px-4 py-2 bg-[#3c3c3c] border-b border-[#1e1e1e]">
-                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                    <span class="ml-3 text-xs text-gray-400">main.py</span>
-                </div>
-                <div class="p-4 overflow-x-auto">
-                    <pre class="text-xs"><code><span class="text-blue-400">import</span> <span class="text-gray-300">os</span>
-<span class="text-blue-400">import</span> <span class="text-gray-300">sys</span>
-<span class="text-blue-400">from</span> <span class="text-gray-300">datetime</span> <span class="text-blue-400">import</span> <span class="text-gray-300">datetime</span>
-
-<span class="text-gray-500"># 业务逻辑处理模块</span>
-<span class="text-blue-400">class</span> <span class="text-yellow-400">DataProcessor</span>:
-    <span class="text-blue-400">def</span> <span class="text-green-400">__init__</span>(<span class="text-gray-300">self</span>, <span class="text-gray-300">config</span>):
-        <span class="text-gray-300">self.config</span> = <span class="text-gray-300">config</span>
-        <span class="text-gray-300">self.cache</span> = {}
-    
-    <span class="text-blue-400">def</span> <span class="text-green-400">process_batch</span>(<span class="text-gray-300">self</span>, <span class="text-gray-300">data</span>):
-        <span class="text-gray-300">results</span> = []
-        <span class="text-blue-400">for</span> <span class="text-gray-300">item</span> <span class="text-blue-400">in</span> <span class="text-gray-300">data</span>:
-            <span class="text-gray-300">processed</span> = <span class="text-gray-300">self._transform(item)</span>
-            <span class="text-gray-300">results.append(processed)</span>
-        <span class="text-blue-400">return</span> <span class="text-gray-300">results</span>
-
-<span class="text-blue-400">def</span> <span class="text-green-400">main</span>():
-    <span class="text-gray-300">processor</span> = <span class="text-yellow-400">DataProcessor</span>({'mode': 'production'})
-    <span class="text-gray-300">data</span> = <span class="text-green-400">fetch_data()</span>
-    <span class="text-gray-300">output</span> = <span class="text-gray-300">processor.process_batch(data)</span>
-    <span class="text-blue-400">print</span>(<span class="text-red-400">f"Processed </span><span class="text-red-400">{</span><span class="text-gray-300">len(output)</span><span class="text-red-400">}</span><span class="text-red-400"> records"</span>)
-
-<span class="text-blue-400">if</span> <span class="text-gray-300">__name__</span> == <span class="text-red-400">'__main__'</span>:
-    <span class="text-gray-300">main()</span></code></pre>
+                <div class="flex items-center gap-3">
+                    <button onclick="switchDisguise('code')" id="tab-code" class="px-3 py-1 text-xs bg-green-600 text-white rounded">代码模式</button>
+                    <button onclick="switchDisguise('table')" id="tab-table" class="px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded hover:bg-gray-600">表格模式</button>
+                    <button onclick="toggleDisguise()" class="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded">返回聊天</button>
                 </div>
             </div>
 
-            <div class="bg-[#252526] rounded-lg overflow-hidden mb-6">
-                <div class="flex items-center gap-2 px-4 py-2 bg-[#3c3c3c] border-b border-[#1e1e1e]">
-                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                    <span class="ml-3 text-xs text-gray-400">database.sql</span>
+            <div id="disguise-code" class="space-y-6">
+                <div class="bg-[#252526] rounded-lg overflow-hidden">
+                    <div class="flex items-center gap-2 px-4 py-2 bg-[#3c3c3c] text-xs">
+                        <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+                        <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+                        <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+                        <span class="ml-3 text-gray-400">main.py — 项目主入口</span>
+                    </div>
+                    <div class="p-4 font-mono text-xs overflow-x-auto">
+                        <pre><code><span style="color:#569cd6">import</span> <span style="color:#9cdcfe">os</span>, <span style="color:#9cdcfe">sys</span>, <span style="color:#9cdcfe">json</span>
+<span style="color:#569cd6">from</span> <span style="color:#9cdcfe">datetime</span> <span style="color:#569cd6">import</span> <span style="color:#9cdcfe">datetime</span>
+<span style="color:#569cd6">from</span> <span style="color:#9cdcfe">sqlalchemy</span> <span style="color:#569cd6">import</span> <span style="color:#9cdcfe">create_engine</span>, <span style="color:#9cdcfe">Session</span>
+
+<span style="color:#6a9955"># ==========================================</span>
+<span style="color:#6a9955">#  数据处理引擎 v2.3.1</span>
+<span style="color:#6a9955">#  Copyright (c) 2024 Tech Corp.</span>
+<span style="color:#6a9955"># ==========================================</span>
+
+<span style="color:#569cd6">class</span> <span style="color:#4ec9b0">DataProcessor</span>:
+    <span style="color:#6a9955">"""核心数据处理类，负责ETL全流程"""</span>
+
+    <span style="color:#569cd6">def</span> <span style="color:#dcdcaa">__init__</span>(<span style="color:#9cdcfe">self</span>, <span style="color:#9cdcfe">config</span>):
+        <span style="color:#9cdcfe">self</span>.<span style="color:#9cdcfe">config</span> = <span style="color:#9cdcfe">config</span>
+        <span style="color:#9cdcfe">self</span>.<span style="color:#9cdcfe">_cache</span> = {}
+        <span style="color:#9cdcfe">self</span>.<span style="color:#dcdcaa">_init_db()</span>
+
+    <span style="color:#569cd6">def</span> <span style="color:#dcdcaa">_init_db</span>(<span style="color:#9cdcfe">self</span>):
+        <span style="color:#9cdcfe">engine</span> = <span style="color:#4ec9b0">create_engine</span>(
+            <span style="color:#ce9178">self</span>.<span style="color:#9cdcfe">config</span>[<span style="color:#ce9178">'db_url'</span>]
+        )
+        <span style="color:#9cdcfe">self</span>.<span style="color:#9cdcfe">session</span> = <span style="color:#4ec9b0">Session</span>(<span style="color:#9cdcfe">engine</span>)
+
+    <span style="color:#569cd6">def</span> <span style="color:#dcdcaa">process</span>(<span style="color:#9cdcfe">self</span>, <span style="color:#9cdcfe">data</span>):
+        <span style="color:#6a9955">"""处理数据主入口"""</span>
+        <span style="color:#9cdcfe">results</span> = []
+        <span style="color:#569cd6">for</span> <span style="color:#9cdcfe">item</span> <span style="color:#569cd6">in</span> <span style="color:#9cdcfe">data</span>:
+            <span style="color:#9cdcfe">processed</span> = <span style="color:#9cdcfe">self</span>.<span style="color:#dcdcaa">_transform</span>(<span style="color:#9cdcfe">item</span>)
+            <span style="color:#9cdcfe">results</span>.<span style="color:#9cdcfe">append</span>(<span style="color:#9cdcfe">processed</span>)
+        <span style="color:#569cd6">return</span> <span style="color:#9cdcfe">results</span>
+
+    <span style="color:#569cd6">def</span> <span style="color:#dcdcaa">_transform</span>(<span style="color:#9cdcfe">self</span>, <span style="color:#9cdcfe">item</span>):
+        <span style="color:#6a9955">"""数据转换逻辑"""</span>
+        <span style="color:#569cd6">if</span> <span style="color:#569cd6">not</span> <span style="color:#9cdcfe">item</span>:
+            <span style="color:#569cd6">return</span> <span style="color:#569cd6">None</span>
+        <span style="color:#9cdcfe">item</span>[<span style="color:#ce9178">'updated_at'</span>] = <span style="color:#4ec9b0">datetime</span>.<span style="color:#dcdcaa">now</span>()
+        <span style="color:#569cd6">return</span> <span style="color:#9cdcfe">item</span>
+
+<span style="color:#569cd6">def</span> <span style="color:#dcdcaa">main</span>():
+    <span style="color:#9cdcfe">processor</span> = <span style="color:#4ec9b0">DataProcessor</span>({
+        <span style="color:#ce9178">'db_url'</span>: <span style="color:#ce9178">'sqlite:///app.db'</span>,
+        <span style="color:#ce9178">'mode'</span>: <span style="color:#ce9178">'production'</span>,
+    })
+    <span style="color:#dcdcaa">print</span>(<span style="color:#ce9178">"System initialized successfully"</span>)
+
+<span style="color:#569cd6">if</span> <span style="color:#9cdcfe">__name__</span> == <span style="color:#ce9178">'__main__'</span>:
+    <span style="color:#dcdcaa">main</span>()</code></pre>
+                    </div>
                 </div>
-                <div class="p-4 overflow-x-auto">
-                    <pre class="text-xs"><code><span class="text-gray-500">-- 用户数据表结构</span>
-<span class="text-blue-400">CREATE TABLE</span> <span class="text-yellow-400">users</span> (
-    <span class="text-yellow-400">id</span> <span class="text-blue-400">INTEGER PRIMARY KEY AUTOINCREMENT</span>,
-    <span class="text-yellow-400">nickname</span> <span class="text-blue-400">VARCHAR(20) UNIQUE NOT NULL</span>,
-    <span class="text-yellow-400">gender</span> <span class="text-blue-400">VARCHAR(10)</span>,
-    <span class="text-yellow-400">age</span> <span class="text-blue-400">INTEGER</span>,
-    <span class="text-yellow-400">occupation</span> <span class="text-blue-400">VARCHAR(50)</span>,
-    <span class="text-yellow-400">position</span> <span class="text-blue-400">VARCHAR(20)</span>,
-    <span class="text-yellow-400">status</span> <span class="text-blue-400">VARCHAR(30)</span>,
-    <span class="text-yellow-400">created_at</span> <span class="text-blue-400">DATETIME DEFAULT CURRENT_TIMESTAMP</span>
+
+                <div class="bg-[#252526] rounded-lg overflow-hidden">
+                    <div class="flex items-center gap-2 px-4 py-2 bg-[#3c3c3c] text-xs">
+                        <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+                        <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+                        <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+                        <span class="ml-3 text-gray-400">database.sql — 数据库结构</span>
+                    </div>
+                    <div class="p-4 font-mono text-xs overflow-x-auto">
+                        <pre><code><span style="color:#6a9955">-- 用户信息表</span>
+<span style="color:#569cd6">CREATE TABLE</span> <span style="color:#9cdcfe">users</span> (
+    <span style="color:#9cdcfe">id</span> <span style="color:#569cd6">INTEGER PRIMARY KEY AUTOINCREMENT</span>,
+    <span style="color:#9cdcfe">username</span> <span style="color:#569cd6">VARCHAR</span>(50) <span style="color:#569cd6">UNIQUE NOT NULL</span>,
+    <span style="color:#9cdcfe">email</span> <span style="color:#569cd6">VARCHAR</span>(100),
+    <span style="color:#9cdcfe">role</span> <span style="color:#569cd6">VARCHAR</span>(20) <span style="color:#569cd6">DEFAULT</span> <span style="color:#ce9178">'user'</span>,
+    <span style="color:#9cdcfe">status</span> <span style="color:#569cd6">TINYINT</span> <span style="color:#569cd6">DEFAULT</span> 1,
+    <span style="color:#9cdcfe">created_at</span> <span style="color:#569cd6">DATETIME DEFAULT CURRENT_TIMESTAMP</span>
 );
 
-<span class="text-gray-500">-- 查询活跃用户</span>
-<span class="text-blue-400">SELECT</span> <span class="text-yellow-400">nickname</span>, <span class="text-yellow-400">position</span>, <span class="text-yellow-400">status</span>
-<span class="text-blue-400">FROM</span> <span class="text-yellow-400">users</span>
-<span class="text-blue-400">WHERE</span> <span class="text-yellow-400">last_active</span> <span class="text-blue-400">&gt;</span> <span class="text-red-400">datetime('now', '-5 minutes')</span>
-<span class="text-blue-400">ORDER BY</span> <span class="text-yellow-400">last_active</span> <span class="text-blue-400">DESC</span>;</code></pre>
+<span style="color:#6a9955">-- 订单数据表</span>
+<span style="color:#569cd6">CREATE TABLE</span> <span style="color:#9cdcfe">orders</span> (
+    <span style="color:#9cdcfe">id</span> <span style="color:#569cd6">INTEGER PRIMARY KEY</span>,
+    <span style="color:#9cdcfe">user_id</span> <span style="color:#569cd6">INTEGER NOT NULL</span>,
+    <span style="color:#9cdcfe">amount</span> <span style="color:#569cd6">DECIMAL</span>(10,2),
+    <span style="color:#9cdcfe">status</span> <span style="color:#569cd6">VARCHAR</span>(20),
+    <span style="color:#9cdcfe">created_at</span> <span style="color:#569cd6">DATETIME</span>,
+    <span style="color:#569cd6">INDEX</span> <span style="color:#9cdcfe">idx_user_id</span> (<span style="color:#9cdcfe">user_id</span>)
+);
+
+<span style="color:#6a9955">-- 查询本月销售数据</span>
+<span style="color:#569cd6">SELECT</span>
+    <span style="color:#4ec9b0">DATE_FORMAT</span>(<span style="color:#9cdcfe">created_at</span>, <span style="color:#ce9178">'%Y-%m-%d'</span>) <span style="color:#569cd6">as</span> <span style="color:#9cdcfe">date</span>,
+    <span style="color:#4ec9b0">SUM</span>(<span style="color:#9cdcfe">amount</span>) <span style="color:#569cd6">as</span> <span style="color:#9cdcfe">total</span>,
+    <span style="color:#4ec9b0">COUNT</span>(*) <span style="color:#569cd6">as</span> <span style="color:#9cdcfe">count</span>
+<span style="color:#569cd6">FROM</span> <span style="color:#9cdcfe">orders</span>
+<span style="color:#569cd6">WHERE</span> <span style="color:#9cdcfe">created_at</span> <span style="color:#569cd6">&gt;=</span> <span style="color:#ce9178">'2024-01-01'</span>
+<span style="color:#569cd6">GROUP BY</span> <span style="color:#9cdcfe">date</span>
+<span style="color:#569cd6">ORDER BY</span> <span style="color:#9cdcfe">date</span> <span style="color:#569cd6">DESC</span>
+<span style="color:#569cd6">LIMIT</span> 30;</code></pre>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-[#252526] rounded-lg overflow-hidden">
-                <div class="flex items-center gap-2 px-4 py-2 bg-[#3c3c3c] border-b border-[#1e1e1e]">
-                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                    <span class="ml-3 text-xs text-gray-400">数据报表</span>
+            <div id="disguise-table" class="hidden">
+                <div class="bg-[#252526] rounded-lg overflow-hidden">
+                    <div class="px-4 py-3 bg-[#3c3c3c] flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="w-3 h-3 rounded-full bg-[#ff5f57]"></span>
+                            <span class="w-3 h-3 rounded-full bg-[#febc2e]"></span>
+                            <span class="w-3 h-3 rounded-full bg-[#28c840]"></span>
+                            <span class="ml-3 text-gray-400">Q3 项目进度跟踪表</span>
+                        </div>
+                        <div class="text-xs text-gray-400">导出 | 筛选 | 刷新</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="border-b border-[#3c3c3c] text-gray-400">
+                                    <th class="text-left px-4 py-3 font-medium">项目名称</th>
+                                    <th class="text-left px-4 py-3 font-medium">负责人</th>
+                                    <th class="text-left px-4 py-3 font-medium">部门</th>
+                                    <th class="text-left px-4 py-3 font-medium">优先级</th>
+                                    <th class="text-left px-4 py-3 font-medium">进度</th>
+                                    <th class="text-left px-4 py-3 font-medium">状态</th>
+                                    <th class="text-right px-4 py-3 font-medium">截止日期</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-[#333] hover:bg-[#2a2d2e]">
+                                    <td class="px-4 py-3 text-gray-200">CRM系统升级</td>
+                                    <td class="px-4 py-3 text-blue-400">张伟</td>
+                                    <td class="px-4 py-3 text-gray-400">技术部</td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-red-900/50 text-red-400 rounded text-[10px]">P0</span></td>
+                                    <td class="px-4 py-3">
+                                        <div class="w-24 bg-gray-700 rounded-full h-1.5">
+                                            <div class="bg-green-500 h-1.5 rounded-full" style="width: 85%"></div>
+                                        </div>
+                                        <span class="text-green-400 text-[11px]">85%</span>
+                                    </td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-green-900/50 text-green-400 rounded text-[10px]">进行中</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-400">2024-08-15</td>
+                                </tr>
+                                <tr class="border-b border-[#333] hover:bg-[#2a2d2e]">
+                                    <td class="px-4 py-3 text-gray-200">移动端App v2.0</td>
+                                    <td class="px-4 py-3 text-blue-400">李娜</td>
+                                    <td class="px-4 py-3 text-gray-400">产品部</td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-orange-900/50 text-orange-400 rounded text-[10px]">P1</span></td>
+                                    <td class="px-4 py-3">
+                                        <div class="w-24 bg-gray-700 rounded-full h-1.5">
+                                            <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 60%"></div>
+                                        </div>
+                                        <span class="text-yellow-400 text-[11px]">60%</span>
+                                    </td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-yellow-900/50 text-yellow-400 rounded text-[10px]">开发中</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-400">2024-09-01</td>
+                                </tr>
+                                <tr class="border-b border-[#333] hover:bg-[#2a2d2e]">
+                                    <td class="px-4 py-3 text-gray-200">Q3营销活动</td>
+                                    <td class="px-4 py-3 text-blue-400">王磊</td>
+                                    <td class="px-4 py-3 text-gray-400">运营部</td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-orange-900/50 text-orange-400 rounded text-[10px]">P1</span></td>
+                                    <td class="px-4 py-3">
+                                        <div class="w-24 bg-gray-700 rounded-full h-1.5">
+                                            <div class="bg-blue-500 h-1.5 rounded-full" style="width: 30%"></div>
+                                        </div>
+                                        <span class="text-blue-400 text-[11px]">30%</span>
+                                    </td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-blue-900/50 text-blue-400 rounded text-[10px]">策划中</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-400">2024-08-30</td>
+                                </tr>
+                                <tr class="border-b border-[#333] hover:bg-[#2a2d2e]">
+                                    <td class="px-4 py-3 text-gray-200">品牌视觉升级</td>
+                                    <td class="px-4 py-3 text-blue-400">赵静</td>
+                                    <td class="px-4 py-3 text-gray-400">设计部</td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-gray-700 text-gray-400 rounded text-[10px]">P2</span></td>
+                                    <td class="px-4 py-3">
+                                        <div class="w-24 bg-gray-700 rounded-full h-1.5">
+                                            <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                        <span class="text-green-400 text-[11px]">100%</span>
+                                    </td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-green-900/50 text-green-400 rounded text-[10px]">已完成</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-400">2024-07-20</td>
+                                </tr>
+                                <tr class="border-b border-[#333] hover:bg-[#2a2d2e]">
+                                    <td class="px-4 py-3 text-gray-200">数据分析平台</td>
+                                    <td class="px-4 py-3 text-blue-400">刘洋</td>
+                                    <td class="px-4 py-3 text-gray-400">数据部</td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-red-900/50 text-red-400 rounded text-[10px]">P0</span></td>
+                                    <td class="px-4 py-3">
+                                        <div class="w-24 bg-gray-700 rounded-full h-1.5">
+                                            <div class="bg-purple-500 h-1.5 rounded-full" style="width: 45%"></div>
+                                        </div>
+                                        <span class="text-purple-400 text-[11px]">45%</span>
+                                    </td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-purple-900/50 text-purple-400 rounded text-[10px]">开发中</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-400">2024-09-15</td>
+                                </tr>
+                                <tr class="border-b border-[#333] hover:bg-[#2a2d2e]">
+                                    <td class="px-4 py-3 text-gray-200">用户反馈系统</td>
+                                    <td class="px-4 py-3 text-blue-400">陈雨</td>
+                                    <td class="px-4 py-3 text-gray-400">客服部</td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-gray-700 text-gray-400 rounded text-[10px]">P2</span></td>
+                                    <td class="px-4 py-3">
+                                        <div class="w-24 bg-gray-700 rounded-full h-1.5">
+                                            <div class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                        <span class="text-green-400 text-[11px]">100%</span>
+                                    </td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-green-900/50 text-green-400 rounded text-[10px]">已上线</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-400">2024-06-30</td>
+                                </tr>
+                                <tr class="hover:bg-[#2a2d2e]">
+                                    <td class="px-4 py-3 text-gray-200">支付网关对接</td>
+                                    <td class="px-4 py-3 text-blue-400">孙浩</td>
+                                    <td class="px-4 py-3 text-gray-400">技术部</td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-orange-900/50 text-orange-400 rounded text-[10px]">P1</span></td>
+                                    <td class="px-4 py-3">
+                                        <div class="w-24 bg-gray-700 rounded-full h-1.5">
+                                            <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 70%"></div>
+                                        </div>
+                                        <span class="text-yellow-400 text-[11px]">70%</span>
+                                    </td>
+                                    <td class="px-4 py-3"><span class="px-2 py-0.5 bg-yellow-900/50 text-yellow-400 rounded text-[10px]">测试中</span></td>
+                                    <td class="px-4 py-3 text-right text-gray-400">2024-08-25</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-4 py-3 bg-[#2a2d2e] flex items-center justify-between text-xs text-gray-400 border-t border-[#3c3c3c]">
+                        <span>共 7 条记录</span>
+                        <div class="flex items-center gap-1">
+                            <button class="px-2 py-1 bg-[#3c3c3c] rounded">上一页</button>
+                            <button class="px-2 py-1 bg-green-600 text-white rounded">1</button>
+                            <button class="px-2 py-1 bg-[#3c3c3c] rounded">下一页</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-4">
-                    <table class="w-full text-xs border-collapse">
-                        <thead>
-                            <tr class="text-gray-400 border-b border-[#3c3c3c]">
-                                <th class="text-left py-2 px-2 font-medium">姓名</th>
-                                <th class="text-left py-2 px-2 font-medium">部门</th>
-                                <th class="text-left py-2 px-2 font-medium">项目</th>
-                                <th class="text-right py-2 px-2 font-medium">进度</th>
-                                <th class="text-right py-2 px-2 font-medium">状态</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr class="border-b border-[#333]">
-                                <td class="py-2 px-2 text-gray-300">张伟</td>
-                                <td class="py-2 px-2 text-blue-400">技术部</td>
-                                <td class="py-2 px-2 text-gray-300">CRM系统</td>
-                                <td class="py-2 px-2 text-right text-green-400">85%</td>
-                                <td class="py-2 px-2 text-right">
-                                    <span class="px-2 py-0.5 bg-green-900/50 text-green-400 rounded text-[10px]">进行中</span>
-                                </td>
-                            </tr>
-                            <tr class="border-b border-[#333]">
-                                <td class="py-2 px-2 text-gray-300">李娜</td>
-                                <td class="py-2 px-2 text-blue-400">产品部</td>
-                                <td class="py-2 px-2 text-gray-300">移动端App</td>
-                                <td class="py-2 px-2 text-right text-yellow-400">60%</td>
-                                <td class="py-2 px-2 text-right">
-                                    <span class="px-2 py-0.5 bg-yellow-900/50 text-yellow-400 rounded text-[10px]">开发中</span>
-                                </td>
-                            </tr>
-                            <tr class="border-b border-[#333]">
-                                <td class="py-2 px-2 text-gray-300">王磊</td>
-                                <td class="py-2 px-2 text-blue-400">运营部</td>
-                                <td class="py-2 px-2 text-gray-300">Q3活动</td>
-                                <td class="py-2 px-2 text-right text-gray-400">30%</td>
-                                <td class="py-2 px-2 text-right">
-                                    <span class="px-2 py-0.5 bg-gray-900/50 text-gray-400 rounded text-[10px]">策划中</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="py-2 px-2 text-gray-300">赵静</td>
-                                <td class="py-2 px-2 text-blue-400">设计部</td>
-                                <td class="py-2 px-2 text-gray-300">品牌升级</td>
-                                <td class="py-2 px-2 text-right text-green-400">100%</td>
-                                <td class="py-2 px-2 text-right">
-                                    <span class="px-2 py-0.5 bg-green-900/50 text-green-400 rounded text-[10px]">已完成</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                <div class="grid grid-cols-3 gap-4 mt-6">
+                    <div class="bg-[#252526] rounded-lg p-4">
+                        <div class="text-xs text-gray-400 mb-2">总项目数</div>
+                        <div class="text-2xl font-bold text-white">23</div>
+                        <div class="text-xs text-green-400 mt-1">↑ 12% 较上月</div>
+                    </div>
+                    <div class="bg-[#252526] rounded-lg p-4">
+                        <div class="text-xs text-gray-400 mb-2">进行中</div>
+                        <div class="text-2xl font-bold text-yellow-400">14</div>
+                        <div class="text-xs text-gray-400 mt-1">占比 60.9%</div>
+                    </div>
+                    <div class="bg-[#252526] rounded-lg p-4">
+                        <div class="text-xs text-gray-400 mb-2">已完成</div>
+                        <div class="text-2xl font-bold text-green-400">9</div>
+                        <div class="text-xs text-gray-400 mt-1">完成率 39.1%</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="edit-profile-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+    <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">编辑资料</h2>
-                <button onclick="closeEditProfile()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
+                <button onclick="closeEdit()" class="p-1 text-slate-400 hover:text-slate-600">✕</button>
             </div>
-            <div class="p-6 space-y-4">
+            <div class="p-4 space-y-3">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">昵称</label>
                     <input type="text" id="edit-nickname" maxlength="20"
-                        class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">性别</label>
-                    <div class="flex gap-3">
-                        <label class="flex items-center gap-2 flex-1 cursor-pointer">
-                            <input type="radio" name="edit-gender" value="男" class="w-4 h-4 text-green-500">
-                            <span class="text-sm">男</span>
-                        </label>
-                        <label class="flex items-center gap-2 flex-1 cursor-pointer">
-                            <input type="radio" name="edit-gender" value="女" class="w-4 h-4 text-green-500">
-                            <span class="text-sm">女</span>
-                        </label>
-                        <label class="flex items-center gap-2 flex-1 cursor-pointer">
-                            <input type="radio" name="edit-gender" value="保密" class="w-4 h-4 text-green-500">
-                            <span class="text-sm">保密</span>
-                        </label>
-                    </div>
+                        class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">年龄</label>
                         <input type="number" id="edit-age" min="18" max="100"
-                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">职业</label>
                         <input type="text" id="edit-occupation" maxlength="50"
-                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500">
                     </div>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="closeEditProfile()" class="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeEdit()" class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 text-sm">
                         取消
                     </button>
-                    <button onclick="saveProfile()" class="flex-1 py-2.5 bg-green-500 text-white font-medium rounded-xl hover:bg-green-600 transition-colors">
+                    <button onclick="saveProfile()" class="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
                         保存
                     </button>
                 </div>
@@ -442,38 +524,14 @@
         </div>
     </div>
 
-    <div id="music-panel" class="fixed bottom-20 left-4 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 w-80 z-30 hidden">
-        <div class="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">🎵 音乐点歌</h3>
-            <button onclick="toggleMusicPanel()" class="text-slate-400 hover:text-slate-600">✕</button>
-        </div>
-        <div class="p-3">
-            <div class="flex gap-2">
-                <input type="text" id="music-search-input" placeholder="搜索歌曲..." maxlength="50"
-                    class="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <button onclick="searchMusic()" class="px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600">
-                    搜索
-                </button>
+    <div id="music-panel" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
+            <div class="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between flex-shrink-0">
+                <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">🎵 网易云音乐 (YesPlayMusic)</h3>
+                <button onclick="toggleMusicPanel()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
             </div>
+            <iframe id="music-iframe" src="https://music.qier222.com/" class="w-full flex-1 border-0"></iframe>
         </div>
-        <div id="music-search-results" class="max-h-64 overflow-y-auto p-2 space-y-2 scrollbar-thin">
-            <div class="text-center text-sm text-slate-400 py-4">输入关键词搜索歌曲</div>
-        </div>
-    </div>
-
-    <div id="music-player" class="fixed bottom-20 right-4 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 w-72 z-30 hidden">
-        <div class="p-3 flex items-center gap-3">
-            <img id="player-cover" src="" class="w-14 h-14 rounded-lg object-cover">
-            <div class="flex-1 min-w-0">
-                <div id="player-song-name" class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">--</div>
-                <div id="player-song-artist" class="text-xs text-slate-500 dark:text-slate-400 truncate">--</div>
-            </div>
-            <div class="flex items-center gap-2">
-                <button onclick="togglePlay()" id="player-play-btn" class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600">▶</button>
-                <button onclick="stopMusic()" class="w-8 h-8 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-600">⏹</button>
-            </div>
-        </div>
-        <audio id="music-audio" class="w-full" controls style="display:none;">
     </div>
 
     <script src="js/api.js"></script>

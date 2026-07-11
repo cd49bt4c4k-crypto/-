@@ -56,7 +56,7 @@ def read_root():
     return {"message": "虚拟职场共享办公 API 服务运行中"}
 
 
-def get_current_user(session_id: str = Header(None), db: Session = Depends(get_db)):
+def get_current_user(session_id: str = Header(None, alias='session_id'), db: Session = Depends(get_db)):
     if not session_id:
         raise HTTPException(status_code=401, detail="未登录")
     
@@ -70,7 +70,7 @@ def get_current_user(session_id: str = Header(None), db: Session = Depends(get_d
     return user
 
 
-def get_or_create_user(session_id: str = Header(None), db: Session = Depends(get_db)):
+def get_or_create_user(session_id: str = Header(None, alias='session_id'), db: Session = Depends(get_db)):
     if not session_id:
         session_id = 'session_' + str(random.randint(100000, 999999))
     
