@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚拟职场 - 共享办公空间</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#EEF2FF',
+                            100: '#E0E7FF',
+                            500: '#6366F1',
+                            600: '#4F46E5',
+                            700: '#4338CA',
+                        },
+                        office: {
+                            day: '#F8FAFC',
+                            dusk: '#334155',
+                            night: '#0F172A',
+                        }
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'slide-right': 'slideRight 0.3s ease-out',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideRight: {
+                            '0%': { opacity: '0', transform: 'translateX(-20px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .isometric-scene {
+            perspective: 1200px;
+            perspective-origin: 50% 50%;
+        }
+
+        .isometric-floor {
+            transform: rotateX(60deg) rotateZ(-45deg);
+            transform-style: preserve-3d;
+        }
+
+        .iso-item {
+            transform: rotateZ(45deg) rotateX(-60deg) translateZ(20px);
+            transform-style: preserve-3d;
+        }
+
+        .iso-person {
+            transform: rotateZ(45deg) rotateX(-60deg);
+            transform-style: preserve-3d;
+        }
+
+        .desk {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: linear-gradient(135deg, #D4A574 0%, #C4956A 100%);
+            border-radius: 4px;
+            box-shadow: 
+                2px 2px 0 #A67C52,
+                4px 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .desk::before {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 5px;
+            width: 8px;
+            height: 15px;
+            background: #8B6914;
+            border-radius: 0 0 2px 2px;
+        }
+
+        .desk::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: 5px;
+            width: 8px;
+            height: 15px;
+            background: #8B6914;
+            border-radius: 0 0 2px 2px;
+        }
+
+        .person {
+            position: absolute;
+            width: 24px;
+            height: 32px;
+            transition: all 0.5s ease;
+        }
+
+        .person-head {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .person-body {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px 6px 4px 4px;
+            margin: -4px auto 0;
+        }
+
+        .person-status {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            white-space: nowrap;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.95);
+            color: #334155;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .person:hover .person-status {
+            opacity: 1;
+        }
+
+        .person-nickname {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            white-space: nowrap;
+            color: #475569;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .dark .person-nickname {
+            color: #CBD5E1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .area-label {
+            position: absolute;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.9);
+            color: #475569;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+
+        .dark .area-label {
+            background: rgba(30, 41, 59, 0.9);
+            color: #CBD5E1;
+        }
+
+        .sticky-note {
+            position: absolute;
+            max-width: 120px;
+            padding: 6px 10px;
+            background: #FEF3C7;
+            font-size: 10px;
+            line-height: 1.4;
+            border-radius: 2px;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+            transform: rotate(-2deg);
+            z-index: 3;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .sticky-note:hover {
+            transform: rotate(0deg) scale(1.05);
+            z-index: 10;
+        }
+
+        .dark .sticky-note {
+            background: #78350F;
+            color: #FEF3C7;
+        }
+
+        .coffee-cup {
+            position: absolute;
+            font-size: 16px;
+            animation: float 2s ease-in-out infinite;
+            z-index: 4;
+        }
+
+        .room-door {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 11px;
+            text-align: center;
+            padding: 4px;
+        }
+
+        .room-door:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 2px;
+        }
+
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .disguise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            display: none;
+            background: white;
+        }
+
+        .disguise-overlay.active {
+            display: block;
+        }
+
+        .ambient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            transition: background 2s ease;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-content {
+            animation: slideUp 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                right: -280px;
+                transition: right 0.3s ease;
+                z-index: 50;
+            }
+
+            .sidebar.open {
+                right: 0;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+            }
+        }
+
+        .gift-float {
+            position: fixed;
+            font-size: 32px;
+            pointer-events: none;
+            z-index: 200;
+            animation: giftFloat 2s ease-out forwards;
+        }
+
+        @keyframes giftFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: #94A3B8;
+            border-radius: 50%;
+            margin: 0 1px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            z-index: 300;
+            animation: slideDown 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: #E2E8F0;
+            overflow: hidden;
+        }
+
+        .dark .progress-bar {
+            background: #334155;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-500">
+    <div id="ambient-overlay" class="ambient-overlay"></div>
+
+    <div id="disguise-overlay" class="disguise-overlay"></div>
+
+    <div id="app" class="flex h-screen">
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                        VO
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold text-slate-800 dark:text-slate-100">虚拟职场</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400" id="time-display">加载中...</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="hidden sm:flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 mr-4">
+                        <span class="flex items-center gap-1">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            <span id="online-count">--</span> 人在线
+                        </span>
+                        <span class="text-slate-300 dark:text-slate-600">|</span>
+                        <span>🤖 <span id="ai-count">--</span> AI同事</span>
+                        <span class="text-slate-300 dark:text-slate-600">|</span>
+                        <span>💬 <span id="msg-count">--</span> 条留言</span>
+                    </div>
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
+                        <span id="theme-icon">🌙</span>
+                    </button>
+                    <button onclick="toggleSidebar()" class="mobile-menu-btn p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 md:hidden">
+                        ☰
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-hidden relative">
+                <div class="absolute top-3 left-3 z-20 flex gap-2 flex-wrap">
+                    <button onclick="switchView('office')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:shadow transition-all" data-view="office">
+                        🏢 办公区
+                    </button>
+                    <button onclick="switchView('pantry')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all" data-view="pantry">
+                        ☕ 茶水间
+                    </button>
+                    <button onclick="switchView('meeting')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all" data-view="meeting">
+                        📊 会议室
+                    </button>
+                    <button onclick="switchView('rooftop')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all" data-view="rooftop">
+                        🌃 天台
+                    </button>
+                    <button onclick="switchView('boss')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all" data-view="boss">
+                        👔 老板办公室
+                    </button>
+                    <button onclick="switchView('basement')" class="view-tab px-3 py-1.5 text-xs font-medium rounded-full bg-white/50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all" data-view="basement">
+                        🌑 地下加班区
+                    </button>
+                </div>
+
+                <div id="scene-container" class="w-full h-full isometric-scene overflow-auto flex items-center justify-center p-8">
+                    <div id="office-scene" class="view-scene">
+                        <div class="isometric-floor relative" style="width: 700px; height: 500px;">
+                            <div class="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-lg" style="box-shadow: inset 0 0 60px rgba(0,0,0,0.05);"></div>
+                            
+                            <div class="area-label" style="top: 20px; left: 30px;">🪟 靠窗黄金区</div>
+                            <div class="area-label" style="top: 20px; left: 280px;">💻 普通办公区</div>
+                            <div class="area-label" style="top: 20px; right: 30px;">🛋️ 角落摸鱼区</div>
+                            
+                            <div id="desks-container"></div>
+                            <div id="people-container"></div>
+                            <div id="notes-container"></div>
+                            
+                            <div class="room-door bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900 dark:to-amber-800 text-amber-800 dark:text-amber-200 w-20 h-14" style="bottom: 10px; left: 30px;" onclick="switchView('pantry')">
+                                ☕ 茶水间
+                            </div>
+                            <div class="room-door bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 text-blue-800 dark:text-blue-200 w-20 h-14" style="bottom: 10px; left: 140px;" onclick="switchView('meeting')">
+                                📊 会议室
+                            </div>
+                            <div class="room-door bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 text-purple-800 dark:text-purple-200 w-20 h-14" style="bottom: 10px; right: 140px;" onclick="switchView('boss')">
+                                👔 老板室
+                            </div>
+                            <div class="room-door bg-gradient-to-br from-slate-600 to-slate-700 dark:from-slate-950 dark:to-slate-900 text-slate-100 w-20 h-14" style="bottom: 10px; right: 30px;" onclick="switchView('basement')">
+                                🌑 地下
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="pantry-scene" class="view-scene hidden">
+                        <div class="isometric-floor relative" style="width: 600px; height: 400px;">
+                            <div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-950 dark:to-orange-950 rounded-lg"></div>
+                            <div class="area-label" style="top: 20px; left: 50%; transform: translateX(-50%);">☕ 茶水间 - 吐槽专区</div>
+                            
+                            <div class="absolute" style="top: 80px; left: 80px;">
+                                <div class="w-32 h-20 bg-gradient-to-b from-stone-300 to-stone-400 dark:from-stone-700 dark:to-stone-800 rounded-t-lg"></div>
+                                <div class="w-32 h-12 bg-stone-500 dark:bg-stone-900 rounded-b-lg"></div>
+                                <div class="absolute -top-6 left-1/2 -translate-x-1/2 text-2xl">☕</div>
+                            </div>
+                            
+                            <div class="absolute" style="top: 100px; right: 80px;">
+                                <div class="w-24 h-32 bg-gradient-to-b from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-lg relative">
+                                    <div class="absolute top-2 left-2 right-2 h-8 bg-slate-400 dark:bg-slate-600 rounded"></div>
+                                    <div class="absolute top-12 left-2 right-2 h-8 bg-slate-400 dark:bg-slate-600 rounded"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="pantry-people" class="absolute inset-0"></div>
+                            
+                            <div class="room-door bg-white/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 w-16 h-12 text-xs" style="bottom: 10px; left: 30px;" onclick="switchView('office')">
+                                ← 返回办公区
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="meeting-scene" class="view-scene hidden">
+                        <div class="isometric-floor relative" style="width: 600px; height: 400px;">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-950 rounded-lg"></div>
+                            <div class="area-label" style="top: 20px; left: 50%; transform: translateX(-50%);">📊 会议室 - 话题投票</div>
+                            
+                            <div class="absolute" style="top: 100px; left: 50%; transform: translateX(-50%);">
+                                <div class="w-48 h-20 bg-gradient-to-br from-stone-400 to-stone-500 dark:from-stone-700 dark:to-stone-800 rounded-full"></div>
+                            </div>
+                            
+                            <div id="meeting-people" class="absolute inset-0"></div>
+                            
+                            <div class="room-door bg-white/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 w-16 h-12 text-xs" style="bottom: 10px; left: 30px;" onclick="switchView('office')">
+                                ← 返回办公区
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="rooftop-scene" class="view-scene hidden">
+                        <div class="isometric-floor relative" style="width: 600px; height: 400px;">
+                            <div class="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-800 dark:from-slate-900 dark:to-black rounded-lg"></div>
+                            <div class="area-label" style="top: 20px; left: 50%; transform: translateX(-50%);" id="rooftop-status">🌃 天台吸烟区</div>
+                            
+                            <div id="rooftop-people" class="absolute inset-0"></div>
+                            
+                            <div class="absolute top-16 right-16 text-5xl animate-pulse-slow">🌙</div>
+                            <div class="absolute top-12 left-20 text-2xl">✨</div>
+                            <div class="absolute top-20 left-40 text-xl">⭐</div>
+                            
+                            <div class="room-door bg-white/20 text-white w-16 h-12 text-xs" style="bottom: 10px; left: 30px;" onclick="switchView('office')">
+                                ← 返回办公区
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="boss-scene" class="view-scene hidden">
+                        <div class="isometric-floor relative" style="width: 500px; height: 400px;">
+                            <div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-950 dark:to-yellow-950 rounded-lg"></div>
+                            <div class="area-label" style="top: 20px; left: 50%; transform: translateX(-50%);">👔 老板办公室</div>
+                            
+                            <div class="absolute" style="top: 80px; left: 50%; transform: translateX(-50%);">
+                                <div class="w-40 h-24 bg-gradient-to-br from-amber-600 to-amber-700 dark:from-amber-900 dark:to-amber-950 rounded-t-lg shadow-lg"></div>
+                                <div class="w-40 h-8 bg-amber-800 dark:bg-amber-950 rounded-b-lg"></div>
+                                <div class="absolute -top-8 left-1/2 -translate-x-1/2 text-3xl">👔</div>
+                            </div>
+                            
+                            <button onclick="enterBossOffice()" class="absolute px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium rounded-lg shadow-lg hover:shadow-xl transition-all hover:scale-105" style="bottom: 120px; left: 50%; transform: translateX(-50%);">
+                                🚪 敲门进入
+                            </button>
+                            
+                            <div class="room-door bg-white/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 w-16 h-12 text-xs" style="bottom: 10px; left: 30px;" onclick="switchView('office')">
+                                ← 返回办公区
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="basement-scene" class="view-scene hidden">
+                        <div class="isometric-floor relative" style="width: 600px; height: 400px;">
+                            <div class="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 dark:from-black dark:to-slate-950 rounded-lg"></div>
+                            <div class="area-label" style="top: 20px; left: 50%; transform: translateX(-50%);">🌑 地下加班区</div>
+                            
+                            <div id="basement-desks" class="absolute inset-0"></div>
+                            <div id="basement-people" class="absolute inset-0"></div>
+                            
+                            <div class="room-door bg-slate-600/50 text-slate-300 w-16 h-12 text-xs" style="bottom: 10px; left: 30px;" onclick="switchView('office')">
+                                ↑ 回到办公区
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-4 left-4 right-4 z-10">
+                    <div class="max-w-2xl mx-auto">
+                        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-3 flex items-end gap-2">
+                            <div class="flex-1 relative">
+                                <input 
+                                    type="text" 
+                                    id="message-input" 
+                                    placeholder="发布工位便签（80字以内）..." 
+                                    maxlength="80"
+                                    class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    onkeypress="handleMessageKeypress(event)"
+                                />
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400" id="char-count">0/80</span>
+                            </div>
+                            <button onclick="sendMessage()" class="px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity">
+                                发送
+                            </button>
+                            <div class="flex gap-1">
+                                <button onclick="showEmojiPicker()" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors text-lg">
+                                    😊
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside id="sidebar" class="sidebar w-72 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-full flex-shrink-0">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+                <div class="flex items-center gap-3 mb-3">
+                    <div id="my-avatar" class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        ?
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-slate-800 dark:text-slate-100 truncate" id="my-nickname">未登录</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400" id="my-position">--</div>
+                    </div>
+                    <button onclick="showEditProfile()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                        ✏️
+                    </button>
+                </div>
+                <div class="mb-2">
+                    <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+                        <span>⭐ 声望值</span>
+                        <span id="my-reputation">--</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="reputation-bar" class="progress-fill bg-gradient-to-r from-amber-400 to-orange-500" style="width: 50%;"></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full" id="my-area">--</span>
+                    <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full" id="my-status">--</span>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto scrollbar-thin">
+                <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">🎣 摸鱼工具箱</h3>
+                    
+                    <div class="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 rounded-lg">
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mb-1">距离下班还有</div>
+                        <div class="text-xl font-bold text-green-600 dark:text-green-400" id="countdown">--:--:--</div>
+                        <div class="mt-2 flex gap-2">
+                            <select id="off-work-time" onchange="updateCountdown()" class="flex-1 text-xs px-2 py-1 border border-slate-200 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                <option value="17:00">17:00 下班</option>
+                                <option value="18:00">18:00 下班</option>
+                                <option value="18:30" selected>18:30 下班</option>
+                                <option value="19:00">19:00 下班</option>
+                                <option value="20:00">20:00 下班</option>
+                                <option value="21:00">21:00 下班</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <button onclick="activateDisguise('excel')" class="p-2.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-slate-700 dark:text-slate-200 transition-colors">
+                            📊 Excel伪装
+                        </button>
+                        <button onclick="activateDisguise('code')" class="p-2.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg text-slate-700 dark:text-slate-200 transition-colors">
+                            💻 代码伪装
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg mb-4">
+                        <span class="text-sm text-slate-700 dark:text-slate-200">🎵 白噪音</span>
+                        <button onclick="toggleWhiteNoise()" id="noise-toggle" class="w-11 h-6 bg-slate-300 dark:bg-slate-600 rounded-full relative transition-colors">
+                            <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">🏆 今日声望榜</h3>
+                    <div id="ranking-list" class="space-y-2">
+                        <div class="text-center text-sm text-slate-400 py-4">加载中...</div>
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">👥 在线同事</h3>
+                    <div id="online-list" class="space-y-2">
+                        <div class="text-center text-sm text-slate-400 py-4">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div id="onboarding-modal" class="modal-backdrop">
+        <div class="modal-content bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white text-center">
+                <div class="text-4xl mb-2">🎉</div>
+                <h2 class="text-xl font-bold">欢迎加入虚拟职场！</h2>
+                <p class="text-sm opacity-90 mt-1">请完成入职信息设置</p>
+            </div>
+            
+            <div class="p-6 space-y-5 max-h-[60vh] overflow-y-auto scrollbar-thin">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">📝 你的昵称（2-10字）</label>
+                    <input 
+                        type="text" 
+                        id="onboard-nickname" 
+                        maxlength="10"
+                        placeholder="输入你的昵称"
+                        class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">💼 选择岗位</label>
+                    <div class="grid grid-cols-3 gap-2" id="position-options"></div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">🪑 选择工位区域</label>
+                    <div class="space-y-2" id="area-options"></div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">😎 初始在线状态</label>
+                    <select id="onboard-status" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </select>
+                </div>
+            </div>
+
+            <div class="p-6 pt-0">
+                <button onclick="completeOnboarding()" class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity">
+                    开始搬砖！🚀
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-profile-modal" class="modal-backdrop hidden">
+        <div class="modal-content bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">编辑个人信息</h3>
+                <button onclick="closeEditProfile()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
+            </div>
+            
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto scrollbar-thin">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">昵称</label>
+                    <input type="text" id="edit-nickname" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">岗位</label>
+                    <select id="edit-position" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">工位区域</label>
+                    <select id="edit-area" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                    <p class="text-xs text-slate-500 mt-1">💡 靠窗黄金区需要声望≥80解锁</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">在线状态</label>
+                    <select id="edit-status" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                </div>
+            </div>
+
+            <div class="p-6 pt-0 flex gap-3">
+                <button onclick="closeEditProfile()" class="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    取消
+                </button>
+                <button onclick="saveProfile()" class="flex-1 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg hover:opacity-90 transition-opacity">
+                    保存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gift-modal" class="modal-backdrop hidden">
+        <div class="modal-content bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">送礼物给 <span id="gift-target-name"></span></h3>
+                <button onclick="closeGiftModal()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
+            </div>
+            
+            <div class="p-6">
+                <div class="grid grid-cols-5 gap-3 mb-4" id="gift-options">
+                    <button onclick="selectGift('咖啡')" class="gift-option p-3 text-2xl bg-slate-50 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded-xl transition-colors border-2 border-transparent">☕</button>
+                    <button onclick="selectGift('奶茶')" class="gift-option p-3 text-2xl bg-slate-50 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded-xl transition-colors border-2 border-transparent">🧋</button>
+                    <button onclick="selectGift('可乐')" class="gift-option p-3 text-2xl bg-slate-50 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded-xl transition-colors border-2 border-transparent">🥤</button>
+                    <button onclick="selectGift('零食')" class="gift-option p-3 text-2xl bg-slate-50 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded-xl transition-colors border-2 border-transparent">🍿</button>
+                    <button onclick="selectGift('鲜花')" class="gift-option p-3 text-2xl bg-slate-50 dark:bg-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-900 rounded-xl transition-colors border-2 border-transparent">💐</button>
+                </div>
+                <input type="text" id="gift-message" placeholder="留言（可选）" maxlength="50" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm mb-4" />
+                <button onclick="sendGift()" class="w-full py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-medium rounded-lg hover:opacity-90 transition-opacity">
+                    送出礼物 🎁
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="emoji-picker" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-3 hidden z-50">
+        <div class="grid grid-cols-8 gap-2 text-xl">
+            <button onclick="insertEmoji('😊')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">😊</button>
+            <button onclick="insertEmoji('😂')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">😂</button>
+            <button onclick="insertEmoji('🥺')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">🥺</button>
+            <button onclick="insertEmoji('😎')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">😎</button>
+            <button onclick="insertEmoji('😭')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">😭</button>
+            <button onclick="insertEmoji('🥱')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">🥱</button>
+            <button onclick="insertEmoji('🤔')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">🤔</button>
+            <button onclick="insertEmoji('😴')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">😴</button>
+            <button onclick="insertEmoji('👍')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">👍</button>
+            <button onclick="insertEmoji('👏')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">👏</button>
+            <button onclick="insertEmoji('💪')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">💪</button>
+            <button onclick="insertEmoji('🎉')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">🎉</button>
+            <button onclick="insertEmoji('☕')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">☕</button>
+            <button onclick="insertEmoji('❤️')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">❤️</button>
+            <button onclick="insertEmoji('🔥')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">🔥</button>
+            <button onclick="insertEmoji('💀')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">💀</button>
+        </div>
+    </div>
+
+    <div id="complaint-panel" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl hidden z-50 overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">☕ 茶水间吐槽墙</h3>
+            <button onclick="closeComplaintPanel()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
+        </div>
+        <div class="p-4">
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="complaint-input" placeholder="说出你的不满..." class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                <button onclick="sendComplaint()" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium rounded-lg">
+                    吐槽
+                </button>
+            </div>
+            <div id="complaint-list" class="space-y-3 max-h-80 overflow-y-auto scrollbar-thin">
+                <div class="text-center text-sm text-slate-400 py-8">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="vote-panel" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg mx-4 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl hidden z-50 overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">📊 会议室投票</h3>
+            <button onclick="closeVotePanel()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
+        </div>
+        <div class="p-4">
+            <button onclick="showCreateVote()" class="w-full mb-4 py-2.5 border-2 border-dashed border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 rounded-lg hover:border-indigo-400 hover:text-indigo-500 transition-colors text-sm">
+                + 发起新投票
+            </button>
+            <div id="vote-list" class="space-y-3 max-h-80 overflow-y-auto scrollbar-thin">
+                <div class="text-center text-sm text-slate-400 py-8">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-vote-modal" class="modal-backdrop hidden">
+        <div class="modal-content bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">发起投票</h3>
+                <button onclick="closeCreateVote()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400">✕</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">投票主题</label>
+                    <input type="text" id="vote-title" placeholder="例：今天中午吃什么？" maxlength="100" class="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">选项（至少2个）</label>
+                    <div id="vote-options-container" class="space-y-2">
+                        <input type="text" placeholder="选项1" class="vote-option-input w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                        <input type="text" placeholder="选项2" class="vote-option-input w-full px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                    </div>
+                    <button onclick="addVoteOption()" class="mt-2 text-sm text-indigo-500 hover:text-indigo-600">+ 添加选项</button>
+                </div>
+            </div>
+            <div class="p-6 pt-0 flex gap-3">
+                <button onclick="closeCreateVote()" class="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700">取消</button>
+                <button onclick="createVote()" class="flex-1 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg hover:opacity-90">发起投票</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/scene.js"></script>
+</body>
+</html>
