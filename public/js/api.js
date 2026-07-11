@@ -71,4 +71,6 @@ const API = {
     getMusicUrl: (id) => apiRequest(`/music/url?id=${id}`),
 
     getMusicLyrics: (id) => apiRequest(`/music/lyrics?id=${id}`),
+
+    getPlaylist: (id) => apiRequest(`/music/playlist?id=${id}`),
 };

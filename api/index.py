@@ -836,6 +836,36 @@ async def get_music_lyrics(id: int = Query(...)):
             return {"lyrics": ""}
 
 
+@app.get("/api/music/playlist")
+async def get_playlist(id: int = Query(...)):
+    if not HAS_HTTPX:
+        return {"tracks": []}
+    async with httpx.AsyncClient() as client:
+        try:
+            url = "https://autumnfish.cn/playlist/detail"
+            params = {"id": id}
+            response = await client.get(url, params=params, timeout=10)
+            data = response.json()
+            
+            if data.get("result"):
+                tracks = data["result"].get("tracks", [])
+                result = []
+                for song in tracks[:50]:
+                    result.append({
+                        "id": song.get("id"),
+                        "name": song.get("name"),
+                        "artist": "/".join([a.get("name") for a in song.get("artists", [])]),
+                        "album": song.get("album", {}).get("name"),
+                        "cover": song.get("album", {}).get("picUrl", ""),
+                        "duration": song.get("duration", 0),
+                    })
+                return {"tracks": result}
+            return {"tracks": []}
+        except Exception as e:
+            print(f"Playlist error: {e}")
+            return {"tracks": []}
+
+
 def init_ai_users(db: Session):
     ai_count = db.query(models.User).filter(models.User.is_ai == True).count()
     if ai_count < 15:
